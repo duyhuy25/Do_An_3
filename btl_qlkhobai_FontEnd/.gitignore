@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+build/
+dist/
+.next/
+
+# Env files
+.env
+.env.local
+.env.development
+.env.production
+
+# Editor
+.vscode/
+.idea/
+
+# Misc
+.DS_Store
+Thumbs.db

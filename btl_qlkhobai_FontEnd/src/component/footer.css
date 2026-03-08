@@ -1,0 +1,21 @@
+.footer{
+  background:linear-gradient(90deg,#007bff,#00b4d8);
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:20px;
+  padding:12px;
+}
+
+.footer img{
+  width:35px;
+}
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+}
+.footer img { height: 45px; width: 45px; }
+.footer span { margin: 4px 0; }
