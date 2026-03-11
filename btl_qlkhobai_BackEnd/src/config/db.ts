@@ -4,12 +4,20 @@ const config = {
   user: "sa",
   password: "123",
   server: "DESKTOP-FTDRE2U",
-  database: "ContainerDB",
+  database: "DoAn2",
   options: {
-    instanceName: "SQLEXPRESS06",
     encrypt: false,
     trustServerCertificate: true
   }
 };
 
-export const pool = new sql.ConnectionPool(config).connect();
+export const poolPromise = new sql.ConnectionPool(config)
+  .connect()
+  .then(pool => {
+    console.log("Connected to SQL Server");
+    return pool;
+  })
+  .catch(err => {
+    console.log("Database connection failed:", err);
+    throw err;
+  });

@@ -1,19 +1,11 @@
-import { pool } from "../config/db";
+import { poolPromise } from "../config/db";
 
 export const getAllHistory = async () => {
+  const pool = await poolPromise;
 
-  const db = await pool;
-
-  const result = await db.request().query(`
-    SELECT 
-        LichSuID,
-        ContainerID,
-        HoatDong,
-        ThoiGian,
-        ViTri
-    FROM LichSuContainer
-    ORDER BY ThoiGian DESC
-  `);
+  const result = await pool
+    .request()
+    .query("SELECT * FROM LichSuContainer");
 
   return result.recordset;
 };
