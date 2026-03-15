@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import "./Containers.css";
+import "./Pages.css";
 
 interface History {
   LichSuID: number;

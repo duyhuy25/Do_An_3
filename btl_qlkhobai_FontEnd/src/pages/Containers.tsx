@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-import "./Containers.css";
+import "./Pages.css";
 
 interface Container {
   ContainerID: number;
-  LoaiHang: string;
+  HopDongID: number;
+  LoaiHangID: string;
   TrongLuong: number;
   TrangThai: string;
-  Kho: string;
-  PhuongTien: string;
-  HopDong: string;
+  KhoID: string;
+  PhuongTienID: string;
+  ChuyenDiID: string;
 }
 
 const Containers = () => {
@@ -17,7 +18,7 @@ const Containers = () => {
 
   useEffect(() => {
 
-    fetch("http://localhost:5000/api/containers")
+    fetch("http://localhost:5000/api/container/container")
       .then(res => res.json())
       .then(data => setContainers(data))
       .catch(err => console.error(err));
@@ -51,12 +52,12 @@ const Containers = () => {
 
             <tr key={c.ContainerID}>
               <td>{c.ContainerID}</td>
-              <td>{c.LoaiHang}</td>
+              <td>{c.HopDongID}</td>
+              <td>{c.LoaiHangID}</td>
               <td>{c.TrongLuong} kg</td>
               <td>{c.TrangThai}</td>
-              <td>{c.Kho}</td>
-              <td>{c.PhuongTien}</td>
-              <td>{c.HopDong}</td>
+              <td>{c.KhoID}</td>
+              <td>{c.PhuongTienID}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>
