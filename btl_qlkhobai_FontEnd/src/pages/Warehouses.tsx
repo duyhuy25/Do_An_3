@@ -5,8 +5,9 @@ interface Warehouse {
   KhoID: number;
   TenKho: string;
   SucChua: number;
-  ViTri: string;
-  NguoiQuanLy: string;
+  SoLuongContainer: number;
+  DiaChi: string;
+  NhanVienQuanLy: string;
 }
 
 const Warehouses = () => {
@@ -15,7 +16,7 @@ const Warehouses = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/warehouses")
+    fetch("http://localhost:5000/api/warehouse/warehouse")
       .then(res => res.json())
       .then(data => setWarehouses(data));
   }, []);
@@ -53,7 +54,8 @@ const Warehouses = () => {
             <th>ID</th>
             <th>Tên kho</th>
             <th>Sức chứa</th>
-            <th>Vị trí</th>
+            <th>Số lượng container</th>
+            <th>Địa chỉ</th>
             <th>Quản lý</th>
             <th>Tác vụ</th>
           </tr>
@@ -67,9 +69,9 @@ const Warehouses = () => {
               <td>{w.KhoID}</td>
               <td>{w.TenKho}</td>
               <td>{w.SucChua}</td>
-              <td>{w.ViTri}</td>
-              <td>{w.NguoiQuanLy}</td>
-
+              <td>{w.SoLuongContainer}</td>
+              <td>{w.DiaChi}</td>
+              <td>{w.NhanVienQuanLy}</td>
               <td>
                 <button className="btn-edit">Sửa</button>
                 <button className="btn-delete">Xóa</button>
