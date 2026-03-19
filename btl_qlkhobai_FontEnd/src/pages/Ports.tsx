@@ -5,7 +5,7 @@ interface Port{
   CangID:number
   TenCang:string
   MaCang:string
-  DiaChi:string
+  ViTri:string
 }
 
 const Ports = () =>{
@@ -15,7 +15,7 @@ const Ports = () =>{
 
   useEffect(()=>{
 
-    fetch("http://localhost:5000/api/ports")
+    fetch("http://localhost:5000/api/port/port")
     .then(res=>res.json())
     .then(data=>setPorts(data))
 
@@ -71,7 +71,7 @@ const Ports = () =>{
               <td>{p.CangID}</td>
               <td>{p.TenCang}</td>
               <td>{p.MaCang}</td>
-              <td>{p.DiaChi}</td>
+              <td>{p.ViTri}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>

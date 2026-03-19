@@ -11,6 +11,7 @@ import Warehouses from "./pages/Warehouses";
 import "./App.css";
 import Vehicles from "./pages/Vehicles";
 import Trips from "./pages/Trips";
+import Ports from "./pages/Ports";
 
 function App() {
 
@@ -24,16 +25,16 @@ function App() {
 
       case "containerhistory":
         return <ContainerHistory />;
-
       case "itemtypes":
           return <ItemTypes />;
-
       case "warehouses":
           return <Warehouses />;
       case "vehicles":
           return <Vehicles />;
       case "trips":
           return <Trips/>
+      case "ports":
+        return <Ports/>
 
       default:
         return <h2>Chưa có dữ liệu</h2>;
