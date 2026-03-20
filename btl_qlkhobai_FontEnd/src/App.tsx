@@ -16,6 +16,7 @@ import Customers from "./pages/Customers";
 import Contracts from "./pages/Contracts";
 import Costs from "./pages/Costs";
 import Invoices from "./pages/Invoices";
+import Users from "./pages/Users";
 
 function App() {
 
@@ -43,10 +44,12 @@ function App() {
         return <Customers/>
       case "contracts":
         return <Contracts/>
-        case "costs":
-          return <Costs/>
-        case "invoices":
-          return <Invoices/>
+      case "costs":
+        return <Costs/>
+      case "invoices":
+        return <Invoices/>
+      case "users":
+        return <Users/>
 
       default:
         return <h2>Chưa có dữ liệu</h2>;

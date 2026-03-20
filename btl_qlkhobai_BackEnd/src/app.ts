@@ -11,6 +11,7 @@ import customer from "./routes/customerRoutes"
 import contract from "./routes/contractRoutes"
 import cost from "./routes/costRoutes"
 import invoice from "./routes/invoiceRoutes"
+import user from "./routes/usersRoutes"
 
 const app = express();
 
@@ -28,5 +29,6 @@ app.use("/api/customer", customer);
 app.use("/api/contract", contract);
 app.use("/api/cost", cost);
 app.use("/api/invoice", invoice);
+app.use("/api/user", user);
 
 export default app;

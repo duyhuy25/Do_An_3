@@ -3,10 +3,12 @@ import "./Pages.css"
 
 interface User{
   UserID:number
+  Username: string
+  PasswordHash: string
   HoTen:string
   Email:string
-  VaiTro:string
   TrangThai:string
+  RoleID:number
 }
 
 const Users = () =>{
@@ -16,7 +18,7 @@ const Users = () =>{
 
   useEffect(()=>{
 
-    fetch("http://localhost:5000/api/users")
+    fetch("http://localhost:5000/api/user/user")
     .then(res=>res.json())
     .then(data=>setUsers(data))
 
@@ -56,14 +58,15 @@ const Users = () =>{
         <thead>
           <tr>
             <th>ID</th>
+            <th>Tài khoản</th>
+            <th>Mật khẩu</th>
             <th>Họ tên</th>
             <th>Email</th>
-            <th>Vai trò</th>
             <th>Trạng thái</th>
+            <th>Vai trò</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
-
         <tbody>
 
           {filtered.map(u =>(
@@ -71,10 +74,12 @@ const Users = () =>{
             <tr key={u.UserID}>
 
               <td>{u.UserID}</td>
+              <td>{u.Username}</td>
+              <td>{u.PasswordHash}</td>
               <td>{u.HoTen}</td>
               <td>{u.Email}</td>
-              <td>{u.VaiTro}</td>
               <td>{u.TrangThai}</td>
+              <td>{u.RoleID}</td>
 
               <td>
                 <button className="btn-edit">Sửa</button>

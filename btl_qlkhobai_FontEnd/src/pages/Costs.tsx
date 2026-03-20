@@ -1,5 +1,5 @@
-import React,{useEffect,useState} from "react"
-import "./Pages.css"
+import React, { useEffect, useState } from "react";
+import "./Pages.css";
 
 interface Cost{
   ChiPhiID:number
