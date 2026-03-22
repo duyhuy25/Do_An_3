@@ -1,21 +1,48 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
 interface Container {
   ContainerID: number;
   HopDongID: number;
-  LoaiHangID: string;
+  LoaiHangID: number;
   TrongLuong: number;
   TrangThai: string;
-  KhoID: string;
-  PhuongTienID: string;
-  ChuyenDiID: string;
+  KhoID: number | null;
+  PhuongTienID: number | null;
+
+}
+
+interface LoaiHangOption {
+  LoaiHangID: number;
+  TenLoai: string;
+}
+
+interface KhoOption {
+  KhoID: number;
+  TenKho: string;
+}
+
+interface PhuongTienOption {
+  PhuongTienID: number;
+  BienSo: string;
+}
+
+interface HopDongOption {
+  HopDongID: number;
+  MaHopDong?: string;
+  TenKH?: string;     
 }
 
 const Containers: React.FC = () => {
-
   const [containers, setContainers] = useState<Container[]>([]);
+  const [loaiHangs, setLoaiHangs] = useState<LoaiHangOption[]>([]);
+  const [khos, setKhos] = useState<KhoOption[]>([]);
+  const [phuongTiens, setPhuongTiens] = useState<PhuongTienOption[]>([]);
+  const [hopDongs, setHopDongs] = useState<HopDongOption[]>([]);
+
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -24,108 +51,195 @@ const Containers: React.FC = () => {
   const [form, setForm] = useState({
     LoaiHangID: "",
     TrongLuong: "",
-    TrangThai: "",
+    TrangThai: "Rỗng",
     KhoID: "",
     PhuongTienID: "",
     HopDongID: "",
-    ChuyenDiID: ""
   });
 
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/container/container");
-    const data = await res.json();
-    setContainers(data);
-  };
 
-  useEffect(() => {
-    fetchData();
+  const fetchContainers = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/container/container");
+      if (!res.ok) throw new Error("Lỗi tải danh sách container");
+      const data = await res.json();
+      setContainers(data);
+    } catch (err: any) {
+      setError(err.message || "Không thể tải container");
+      console.error(err);
+    }
   }, []);
 
-  const formatID = (id: number) =>
-    "CTN" + id.toString().padStart(3, "0");
+  const fetchLoaiHangs = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/itemtype/itemtype"); 
+      const data = await res.json();
+      setLoaiHangs(data);
+    } catch (err) {
+      console.error("Error fetching loai hang:", err);
+    }
+  }, []);
 
-  const filtered = containers.filter((c) =>
-    formatID(c.ContainerID).includes(search)
-  );
+  const fetchKhos = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/warehouse/warehouse");
+      const data = await res.json();
+      setKhos(data);
+    } catch (err) {
+      console.error("Error fetching kho:", err);
+    }
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fetchPhuongTiens = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/vehicle/vehicle");
+      const data = await res.json();
+      setPhuongTiens(data);
+    } catch (err) {
+      console.error("Error fetching phuong tien:", err);
+    }
+  }, []);
+
+  const fetchHopDongs = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/contract/contract");
+      const data = await res.json();
+      setHopDongs(data);
+    } catch (err) {
+      console.error("Error fetching hop dong:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const loadAll = async () => {
+      setLoading(true);
+      setError(null);
+      await Promise.all([
+        fetchContainers(),
+        fetchLoaiHangs(),
+        fetchKhos(),
+        fetchPhuongTiens(),
+        fetchHopDongs(),
+      ]);
+      setLoading(false);
+    };
+    loadAll();
+  }, [fetchContainers, fetchLoaiHangs, fetchKhos, fetchPhuongTiens, fetchHopDongs]);
+
+  const formatID = (id: number) => "CTN" + id.toString().padStart(3, "0");
+
+  const filteredContainers = containers.filter((c) => {
+    const searchLower = search.toLowerCase();
+    return (
+      formatID(c.ContainerID).toLowerCase().includes(searchLower) ||
+      c.TrangThai.toLowerCase().includes(searchLower) ||
+      c.TrongLuong.toString().includes(search) ||
+      (c.HopDongID && c.HopDongID.toString().includes(search))
+    );
+  });
+
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleOpenAdd = () => {
     setIsEdit(false);
     setSelected(null);
-
     setForm({
       LoaiHangID: "",
       TrongLuong: "",
-      TrangThai: "",
+      TrangThai: "Rỗng",
       KhoID: "",
       PhuongTienID: "",
       HopDongID: "",
-      ChuyenDiID: ""
     });
-
     setShowForm(true);
   };
 
   const handleOpenEdit = (item: Container) => {
     setIsEdit(true);
     setSelected(item);
-
     setForm({
-      LoaiHangID: item.LoaiHangID,
+      LoaiHangID: item.LoaiHangID.toString(),
       TrongLuong: item.TrongLuong.toString(),
       TrangThai: item.TrangThai,
-      KhoID: item.KhoID,
-      PhuongTienID: item.PhuongTienID,
+      KhoID: item.KhoID ? item.KhoID.toString() : "",
+      PhuongTienID: item.PhuongTienID ? item.PhuongTienID.toString() : "",
       HopDongID: item.HopDongID.toString(),
-      ChuyenDiID: item.ChuyenDiID
     });
-
     setShowForm(true);
   };
 
   const handleSubmit = async () => {
-    const data = {
-      ...form,
-      TrongLuong: Number(form.TrongLuong),
-      HopDongID: Number(form.HopDongID)
-    };
-
-    if (isEdit && selected) {
-      await fetch(
-        `http://localhost:5000/api/container/container/${selected.ContainerID}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }
-      );
-    } else {
-      await fetch("http://localhost:5000/api/container/container", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    if (!form.LoaiHangID) {
+      alert("Vui lòng chọn loại hàng");
+      return;
+    }
+    if (!form.HopDongID) {
+      alert("Vui lòng chọn hợp đồng");
+      return;
+    }
+    if (!form.TrongLuong || isNaN(Number(form.TrongLuong))) {
+      alert("Trọng lượng phải là số hợp lệ");
+      return;
     }
 
-    setShowForm(false);
-    fetchData();
+    const body = {
+      ...form,
+      LoaiHangID: Number(form.LoaiHangID),
+      TrongLuong: Number(form.TrongLuong),
+      HopDongID: Number(form.HopDongID),
+      KhoID: form.KhoID ? Number(form.KhoID) : null,
+      PhuongTienID: form.PhuongTienID ? Number(form.PhuongTienID) : null,
+    };
+
+    try {
+      if (isEdit && selected) {
+        await fetch(
+          `http://localhost:5000/api/container/container/${selected.ContainerID}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        );
+      } else {
+        await fetch("http://localhost:5000/api/container/container", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
+
+      setShowForm(false);
+      fetchContainers();
+    } catch (err) {
+      console.error("Submit error:", err);
+      alert("Có lỗi xảy ra khi lưu");
+    }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xóa container này?")) return;
 
-    await fetch(`http://localhost:5000/api/container/container/${id}`, {
-      method: "DELETE"
-    });
-
-    fetchData();
+    try {
+      await fetch(`http://localhost:5000/api/container/container/${id}`, {
+        method: "DELETE",
+      });
+      fetchContainers();
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Không thể xóa container");
+    }
   };
+
+  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
@@ -135,7 +249,7 @@ const Containers: React.FC = () => {
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm container..."
+            placeholder="🔍 Tìm container (ID, trạng thái, trọng lượng...)"
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -152,7 +266,7 @@ const Containers: React.FC = () => {
           <tr>
             <th>ID</th>
             <th>Loại hàng</th>
-            <th>Trọng lượng</th>
+            <th>Trọng lượng (kg)</th>
             <th>Trạng thái</th>
             <th>Kho</th>
             <th>Phương tiện</th>
@@ -162,15 +276,26 @@ const Containers: React.FC = () => {
         </thead>
 
         <tbody>
-          {filtered.map((c) => (
+          {filteredContainers.map((c) => (
             <tr key={c.ContainerID} onClick={() => handleOpenEdit(c)}>
               <td>{formatID(c.ContainerID)}</td>
-              <td>{c.LoaiHangID}</td>
-              <td>{c.TrongLuong}</td>
+              <td>
+                {loaiHangs.find((lh) => lh.LoaiHangID === c.LoaiHangID)?.TenLoai ||
+                  c.LoaiHangID}
+              </td>
+              <td>{c.TrongLuong.toLocaleString("vi-VN")}</td>
               <td>{c.TrangThai}</td>
-              <td>{c.KhoID}</td>
-              <td>{c.PhuongTienID}</td>
-              <td>{c.HopDongID}</td>
+              <td>
+                {khos.find((k) => k.KhoID === c.KhoID)?.TenKho || "-"}
+              </td>
+              <td>
+                {phuongTiens.find((pt) => pt.PhuongTienID === c.PhuongTienID)
+                  ?.BienSo || "-"}
+              </td>
+              <td>
+                {hopDongs.find((hd) => hd.HopDongID === c.HopDongID)?.MaHopDong ||
+                  c.HopDongID}
+              </td>
 
               <td>
                 <button
@@ -201,27 +326,86 @@ const Containers: React.FC = () => {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
+            <h3>{isEdit ? "✏️ Sửa Container" : "➕ Thêm Container"}</h3>
 
-            <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} container</h3>
+            <label>Loại hàng *</label>
+            <select
+              name="LoaiHangID"
+              value={form.LoaiHangID}
+              onChange={handleChange}
+              required
+            >
+              <option value="">-- Chọn loại hàng --</option>
+              {loaiHangs.map((lh) => (
+                <option key={lh.LoaiHangID} value={lh.LoaiHangID}>
+                  {lh.TenLoai}
+                </option>
+              ))}
+            </select>
 
-            <input name="LoaiHangID" placeholder="Loại hàng" value={form.LoaiHangID} onChange={handleChange} />
-            <input name="TrongLuong" placeholder="Trọng lượng" value={form.TrongLuong} onChange={handleChange} />
-            <input name="TrangThai" placeholder="Trạng thái" value={form.TrangThai} onChange={handleChange} />
-            <input name="KhoID" placeholder="Kho" value={form.KhoID} onChange={handleChange} />
-            <input name="PhuongTienID" placeholder="Phương tiện" value={form.PhuongTienID} onChange={handleChange} />
-            <input name="HopDongID" placeholder="Hợp đồng" value={form.HopDongID} onChange={handleChange} />
-            <input name="ChuyenDiID" placeholder="Chuyến đi" value={form.ChuyenDiID} onChange={handleChange} />
+            <label>Trọng lượng (kg) *</label>
+            <input
+              type="number"
+              name="TrongLuong"
+              placeholder="Nhập trọng lượng"
+              value={form.TrongLuong}
+              onChange={handleChange}
+              required
+            />
+
+            <label>Trạng thái</label>
+            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option value="Rỗng">Rỗng</option>
+              <option value="Đầy">Đầy</option>
+              <option value="Đang vận chuyển">Đang vận chuyển</option>
+              <option value="Đã giao">Đã giao</option>
+              <option value="Hỏng">Hỏng</option>
+            </select>
+
+            <label>Kho</label>
+            <select name="KhoID" value={form.KhoID} onChange={handleChange}>
+              <option value="">-- Chưa nhập kho --</option>
+              {khos.map((k) => (
+                <option key={k.KhoID} value={k.KhoID}>
+                  {k.TenKho}
+                </option>
+              ))}
+            </select>
+
+            <label>Phương tiện</label>
+            <select name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange}>
+              <option value="">-- Chưa gắn phương tiện --</option>
+              {phuongTiens.map((pt) => (
+                <option key={pt.PhuongTienID} value={pt.PhuongTienID}>
+                  {pt.BienSo}
+                </option>
+              ))}
+            </select>
+
+            <label>Hợp đồng *</label>
+            <select
+              name="HopDongID"
+              value={form.HopDongID}
+              onChange={handleChange}
+              required
+            >
+              <option value="">-- Chọn hợp đồng --</option>
+              {hopDongs.map((hd) => (
+                <option key={hd.HopDongID} value={hd.HopDongID}>
+                  {hd.MaHopDong || `HD${hd.HopDongID}`} 
+                  {hd.TenKH ? ` - ${hd.TenKH}` : ""}
+                </option>
+              ))}
+            </select>
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>
                 {isEdit ? "Cập nhật" : "Thêm"}
               </button>
-
               <button className="btn-cancel" onClick={() => setShowForm(false)}>
                 Hủy
               </button>
             </div>
-
           </div>
         </div>
       )}
