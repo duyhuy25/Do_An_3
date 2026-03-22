@@ -1,19 +1,34 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
 interface Cost {
   ChiPhiID: number;
   HopDongID: number;
-  ContainerID: number;
+  ContainerID: number | null;
   LoaiChiPhi: string;
   SoTien: number;
   ThuKhachHang: string;
 }
 
-const Costs: React.FC = () => {
+interface HopDongOption {
+  HopDongID: number;
+  MaHopDong?: string;
+  TenKH?: string;
+}
 
+interface ContainerOption {
+  ContainerID: number;
+  formattedID: string;
+}
+
+const Costs: React.FC = () => {
   const [costs, setCosts] = useState<Cost[]>([]);
+  const [hopDongs, setHopDongs] = useState<HopDongOption[]>([]);
+  const [containers, setContainers] = useState<ContainerOption[]>([]);
+
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -24,101 +39,169 @@ const Costs: React.FC = () => {
     ContainerID: "",
     LoaiChiPhi: "",
     SoTien: "",
-    ThuKhachHang: ""
+    ThuKhachHang: "Không",
   });
 
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/cost/cost");
-    const data = await res.json();
-    setCosts(data);
-  };
-
-  useEffect(() => {
-    fetchData();
+  const fetchCosts = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/cost/cost");
+      if (!res.ok) throw new Error("Lỗi tải danh sách chi phí");
+      const data = await res.json();
+      setCosts(data);
+    } catch (err: any) {
+      setError(err.message || "Không thể tải chi phí");
+      console.error(err);
+    }
   }, []);
 
-  const formatID = (id: number) =>
-    "CP" + id.toString().padStart(3, "0");
+  const fetchHopDongs = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/hopdong");
+      const data = await res.json();
+      setHopDongs(data);
+    } catch (err) {
+      console.error("Error fetching hop dong:", err);
+    }
+  }, []);
 
-  const filtered = costs.filter((c) =>
-    c.LoaiChiPhi.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchContainers = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/container/container");
+      const data = await res.json();
+      const formatted = data.map((c: any) => ({
+        ContainerID: c.ContainerID,
+        formattedID: "CTN" + c.ContainerID.toString().padStart(3, "0"),
+      }));
+      setContainers(formatted);
+    } catch (err) {
+      console.error("Error fetching containers:", err);
+    }
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const loadAll = async () => {
+      setLoading(true);
+      setError(null);
+      await Promise.all([fetchCosts(), fetchHopDongs(), fetchContainers()]);
+      setLoading(false);
+    };
+    loadAll();
+  }, [fetchCosts, fetchHopDongs, fetchContainers]);
+
+  const formatID = (id: number) => "CP" + id.toString().padStart(3, "0");
+
+  const filteredCosts = costs.filter((c) => {
+    const searchLower = search.toLowerCase();
+    const hd = hopDongs.find((h) => h.HopDongID === c.HopDongID);
+    const ct = containers.find((ctn) => ctn.ContainerID === c.ContainerID);
+    return (
+      formatID(c.ChiPhiID).toLowerCase().includes(searchLower) ||
+      c.LoaiChiPhi.toLowerCase().includes(searchLower) ||
+      c.SoTien.toString().includes(search) ||
+      hd?.MaHopDong?.toLowerCase().includes(searchLower) ||
+      ct?.formattedID.toLowerCase().includes(searchLower) ||
+      c.ThuKhachHang.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleOpenAdd = () => {
     setIsEdit(false);
     setSelected(null);
-
     setForm({
       HopDongID: "",
       ContainerID: "",
       LoaiChiPhi: "",
       SoTien: "",
-      ThuKhachHang: ""
+      ThuKhachHang: "Không",
     });
-
     setShowForm(true);
   };
 
   const handleOpenEdit = (item: Cost) => {
     setIsEdit(true);
     setSelected(item);
-
     setForm({
       HopDongID: item.HopDongID.toString(),
-      ContainerID: item.ContainerID.toString(),
+      ContainerID: item.ContainerID ? item.ContainerID.toString() : "",
       LoaiChiPhi: item.LoaiChiPhi,
       SoTien: item.SoTien.toString(),
-      ThuKhachHang: item.ThuKhachHang
+      ThuKhachHang: item.ThuKhachHang,
     });
-
     setShowForm(true);
   };
 
   const handleSubmit = async () => {
-    const data = {
-      ...form,
-      HopDongID: Number(form.HopDongID),
-      ContainerID: Number(form.ContainerID),
-      SoTien: Number(form.SoTien)
-    };
-
-    if (isEdit && selected) {
-      await fetch(
-        `http://localhost:5000/api/cost/cost/${selected.ChiPhiID}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }
-      );
-    } else {
-      await fetch("http://localhost:5000/api/cost/cost", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    if (!form.HopDongID) {
+      alert("Vui lòng chọn hợp đồng");
+      return;
+    }
+    if (!form.LoaiChiPhi.trim()) {
+      alert("Vui lòng nhập loại chi phí");
+      return;
+    }
+    if (!form.SoTien || isNaN(Number(form.SoTien)) || Number(form.SoTien) <= 0) {
+      alert("Số tiền phải là số dương hợp lệ");
+      return;
     }
 
-    setShowForm(false);
-    fetchData();
+    const body = {
+      ...form,
+      HopDongID: Number(form.HopDongID),
+      ContainerID: form.ContainerID ? Number(form.ContainerID) : null,
+      SoTien: Number(form.SoTien),
+    };
+
+    try {
+      if (isEdit && selected) {
+        await fetch(
+          `http://localhost:5000/api/cost/cost/${selected.ChiPhiID}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        );
+      } else {
+        await fetch("http://localhost:5000/api/cost/cost", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
+
+      setShowForm(false);
+      fetchCosts();
+    } catch (err) {
+      console.error("Submit error:", err);
+      alert("Có lỗi khi lưu chi phí");
+    }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xóa chi phí này?")) return;
 
-    await fetch(`http://localhost:5000/api/cost/cost/${id}`, {
-      method: "DELETE"
-    });
-
-    fetchData();
+    try {
+      await fetch(`http://localhost:5000/api/cost/cost/${id}`, {
+        method: "DELETE",
+      });
+      fetchCosts();
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Không thể xóa chi phí");
+    }
   };
+
+  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
@@ -128,7 +211,7 @@ const Costs: React.FC = () => {
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm chi phí..."
+            placeholder="🔍 Tìm chi phí (loại, hợp đồng, container, số tiền...)"
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -147,64 +230,120 @@ const Costs: React.FC = () => {
             <th>Hợp đồng</th>
             <th>Container</th>
             <th>Loại chi phí</th>
-            <th>Số tiền</th>
+            <th>Số tiền (VNĐ)</th>
             <th>Thu khách hàng</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
 
         <tbody>
-          {filtered.map((c) => (
-            <tr key={c.ChiPhiID} onClick={() => handleOpenEdit(c)}>
-              <td>{formatID(c.ChiPhiID)}</td>
-              <td>{c.HopDongID}</td>
-              <td>{c.ContainerID}</td>
-              <td>{c.LoaiChiPhi}</td>
-              <td>{c.SoTien.toLocaleString()}</td>
-              <td>{c.ThuKhachHang}</td>
+          {filteredCosts.map((c) => {
+            const hd = hopDongs.find((h) => h.HopDongID === c.HopDongID);
+            const ct = containers.find((ctn) => ctn.ContainerID === c.ContainerID);
+            return (
+              <tr key={c.ChiPhiID} onClick={() => handleOpenEdit(c)}>
+                <td>{formatID(c.ChiPhiID)}</td>
+                <td>
+                  {hd
+                    ? hd.MaHopDong || `HD${hd.HopDongID}`
+                    : c.HopDongID}
+                </td>
+                <td>{ct ? ct.formattedID : "-"}</td>
+                <td>{c.LoaiChiPhi}</td>
+                <td>{c.SoTien.toLocaleString("vi-VN")}</td>
+                <td>{c.ThuKhachHang}</td>
 
-              <td>
-                <button
-                  className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(c);
-                  }}
-                >
-                  Sửa
-                </button>
+                <td>
+                  <button
+                    className="btn-edit"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEdit(c);
+                    }}
+                  >
+                    Sửa
+                  </button>
 
-                <button
-                  className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(c.ChiPhiID);
-                  }}
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
+                  <button
+                    className="btn-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(c.ChiPhiID);
+                    }}
+                  >
+                    Xóa
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} chi phí</h3>
+            <h3>{isEdit ? "✏️ Sửa chi phí" : "➕ Thêm chi phí"}</h3>
 
-            <input name="HopDongID" placeholder="Hợp đồng" value={form.HopDongID} onChange={handleChange} />
-            <input name="ContainerID" placeholder="Container" value={form.ContainerID} onChange={handleChange} />
-            <input name="LoaiChiPhi" placeholder="Loại chi phí" value={form.LoaiChiPhi} onChange={handleChange} />
-            <input name="SoTien" placeholder="Số tiền" value={form.SoTien} onChange={handleChange} />
-            <input name="ThuKhachHang" placeholder="Thu khách hàng" value={form.ThuKhachHang} onChange={handleChange} />
+            <label>Hợp đồng *</label>
+            <select
+              name="HopDongID"
+              value={form.HopDongID}
+              onChange={handleChange}
+              required
+            >
+              <option value="">-- Chọn hợp đồng --</option>
+              {hopDongs.map((hd) => (
+                <option key={hd.HopDongID} value={hd.HopDongID}>
+                  {hd.MaHopDong || `HD${hd.HopDongID}`}
+                  {hd.TenKH ? ` - ${hd.TenKH}` : ""}
+                </option>
+              ))}
+            </select>
+
+            <label>Container</label>
+            <select name="ContainerID" value={form.ContainerID} onChange={handleChange}>
+              <option value="">-- Không gắn container --</option>
+              {containers.map((ct) => (
+                <option key={ct.ContainerID} value={ct.ContainerID}>
+                  {ct.formattedID}
+                </option>
+              ))}
+            </select>
+
+            <label>Loại chi phí *</label>
+            <input
+              name="LoaiChiPhi"
+              placeholder="Ví dụ: Phí vận chuyển, Phí lưu kho, Phí THC..."
+              value={form.LoaiChiPhi}
+              onChange={handleChange}
+              required
+            />
+
+            <label>Số tiền (VNĐ) *</label>
+            <input
+              type="number"
+              name="SoTien"
+              placeholder="Nhập số tiền"
+              value={form.SoTien}
+              onChange={handleChange}
+              required
+            />
+
+            <label>Thu khách hàng</label>
+            <select
+              name="ThuKhachHang"
+              value={form.ThuKhachHang}
+              onChange={handleChange}
+            >
+              <option value="Không">Không</option>
+              <option value="Có">Có</option>
+            </select>
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>
                 {isEdit ? "Cập nhật" : "Thêm"}
               </button>
-
               <button className="btn-cancel" onClick={() => setShowForm(false)}>
                 Hủy
               </button>
