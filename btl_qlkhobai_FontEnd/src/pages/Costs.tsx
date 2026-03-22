@@ -56,7 +56,7 @@ const Costs: React.FC = () => {
 
   const fetchHopDongs = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/hopdong");
+      const res = await fetch("http://localhost:5000/api/contract/contract");
       const data = await res.json();
       setHopDongs(data);
     } catch (err) {

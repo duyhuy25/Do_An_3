@@ -52,7 +52,7 @@ const Contracts: React.FC = () => {
 
   const fetchKhachHangs = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/khachhang");
+      const res = await fetch("http://localhost:5000/api/customer/customer");
       const data = await res.json();
       setKhachHangs(data);
     } catch (err) {

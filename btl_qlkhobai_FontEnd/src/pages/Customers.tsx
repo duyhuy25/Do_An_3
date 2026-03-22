@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
 interface Customer {
@@ -10,9 +10,10 @@ interface Customer {
 }
 
 const Customers: React.FC = () => {
-
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -22,94 +23,131 @@ const Customers: React.FC = () => {
     TenKH: "",
     DiaChi: "",
     SDT: "",
-    Email: ""
+    Email: "",
   });
 
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/customer/customer");
-    const data = await res.json();
-    setCustomers(data);
-  };
-
-  useEffect(() => {
-    fetchData();
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/customer/customer");
+      if (!res.ok) throw new Error("Lỗi tải danh sách khách hàng");
+      const data = await res.json();
+      setCustomers(data);
+    } catch (err: any) {
+      setError(err.message || "Không thể tải khách hàng");
+      console.error(err);
+    }
   }, []);
 
-  const formatID = (id: number) =>
-    "KH" + id.toString().padStart(3, "0");
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      await fetchCustomers();
+      setLoading(false);
+    };
+    loadData();
+  }, [fetchCustomers]);
 
-  const filtered = customers.filter((c) =>
-    c.TenKH.toLowerCase().includes(search.toLowerCase())
-  );
+  const formatID = (id: number) => "KH" + id.toString().padStart(3, "0");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const filteredCustomers = customers.filter((c) => {
+    const searchLower = search.toLowerCase();
+    return (
+      formatID(c.KhachHangID).toLowerCase().includes(searchLower) ||
+      c.TenKH.toLowerCase().includes(searchLower) ||
+      c.SDT.toLowerCase().includes(searchLower) ||
+      c.Email.toLowerCase().includes(searchLower) ||
+      c.DiaChi.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleOpenAdd = () => {
     setIsEdit(false);
     setSelected(null);
-
     setForm({
       TenKH: "",
       DiaChi: "",
       SDT: "",
-      Email: ""
+      Email: "",
     });
-
     setShowForm(true);
   };
 
   const handleOpenEdit = (item: Customer) => {
     setIsEdit(true);
     setSelected(item);
-
     setForm({
       TenKH: item.TenKH,
       DiaChi: item.DiaChi,
       SDT: item.SDT,
-      Email: item.Email
+      Email: item.Email,
     });
-
     setShowForm(true);
   };
 
   const handleSubmit = async () => {
-    const data = { ...form };
-
-    if (isEdit && selected) {
-      await fetch(
-        `http://localhost:5000/api/customer/customer/${selected.KhachHangID}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }
-      );
-    } else {
-      await fetch("http://localhost:5000/api/customer/customer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    if (!form.TenKH.trim()) {
+      alert("Vui lòng nhập tên khách hàng");
+      return;
+    }
+    if (!form.SDT.trim()) {
+      alert("Vui lòng nhập số điện thoại");
+      return;
     }
 
-    setShowForm(false);
-    fetchData();
+    const body = { ...form };
+
+    try {
+      if (isEdit && selected) {
+        await fetch(
+          `http://localhost:5000/api/customer/customer/${selected.KhachHangID}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        );
+      } else {
+        await fetch("http://localhost:5000/api/customer/customer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
+
+      setShowForm(false);
+      fetchCustomers();
+    } catch (err) {
+      console.error("Submit error:", err);
+      alert("Có lỗi khi lưu khách hàng");
+    }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xóa khách hàng này?")) return;
 
-    await fetch(`http://localhost:5000/api/customer/customer/${id}`, {
-      method: "DELETE"
-    });
-
-    fetchData();
+    try {
+      await fetch(`http://localhost:5000/api/customer/customer/${id}`, {
+        method: "DELETE",
+      });
+      fetchCustomers();
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Không thể xóa khách hàng (có thể đang liên kết với hợp đồng)");
+    }
   };
+
+  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
@@ -119,7 +157,7 @@ const Customers: React.FC = () => {
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm khách hàng..."
+            placeholder="🔍 Tìm khách hàng (tên, SĐT, email, địa chỉ...)"
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -135,7 +173,7 @@ const Customers: React.FC = () => {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Tên</th>
+            <th>Tên khách hàng</th>
             <th>Địa chỉ</th>
             <th>Điện thoại</th>
             <th>Email</th>
@@ -144,13 +182,13 @@ const Customers: React.FC = () => {
         </thead>
 
         <tbody>
-          {filtered.map((c) => (
+          {filteredCustomers.map((c) => (
             <tr key={c.KhachHangID} onClick={() => handleOpenEdit(c)}>
               <td>{formatID(c.KhachHangID)}</td>
               <td>{c.TenKH}</td>
-              <td>{c.DiaChi}</td>
+              <td>{c.DiaChi || "-"}</td>
               <td>{c.SDT}</td>
-              <td>{c.Email}</td>
+              <td>{c.Email || "-"}</td>
 
               <td>
                 <button
@@ -181,18 +219,48 @@ const Customers: React.FC = () => {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} khách hàng</h3>
+            <h3>{isEdit ? "✏️ Sửa khách hàng" : "➕ Thêm khách hàng"}</h3>
 
-            <input name="TenKH" placeholder="Tên khách hàng" value={form.TenKH} onChange={handleChange} />
-            <input name="DiaChi" placeholder="Địa chỉ" value={form.DiaChi} onChange={handleChange} />
-            <input name="SDT" placeholder="SĐT" value={form.SDT} onChange={handleChange} />
-            <input name="Email" placeholder="Email" value={form.Email} onChange={handleChange} />
+            <label>Tên khách hàng *</label>
+            <input
+              name="TenKH"
+              placeholder="Nhập tên khách hàng"
+              value={form.TenKH}
+              onChange={handleChange}
+              required
+            />
+
+            <label>Địa chỉ</label>
+            <input
+              name="DiaChi"
+              placeholder="Nhập địa chỉ đầy đủ"
+              value={form.DiaChi}
+              onChange={handleChange}
+            />
+
+            <label>Số điện thoại *</label>
+            <input
+              type="tel"
+              name="SDT"
+              placeholder="Ví dụ: 0909123456"
+              value={form.SDT}
+              onChange={handleChange}
+              required
+            />
+
+            <label>Email</label>
+            <input
+              type="email"
+              name="Email"
+              placeholder="Ví dụ: khachhang@example.com"
+              value={form.Email}
+              onChange={handleChange}
+            />
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>
                 {isEdit ? "Cập nhật" : "Thêm"}
               </button>
-
               <button className="btn-cancel" onClick={() => setShowForm(false)}>
                 Hủy
               </button>
