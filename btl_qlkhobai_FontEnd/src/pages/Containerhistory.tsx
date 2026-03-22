@@ -23,6 +23,9 @@ const ContainerHistory = () => {
   const filteredHistory = history.filter((h) =>
     h.ContainerID.toString().includes(search)
   );
+  const formatID = (id: number) => {
+    return "LS" + id.toString().padStart(3, "0");
+  };
 
   return (
     <div>

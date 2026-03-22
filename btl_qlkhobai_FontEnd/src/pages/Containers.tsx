@@ -28,18 +28,27 @@ const Containers = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [search, setSearch] = useState("");
 
+  // 🔹 LOAD DATA
+  const fetchData = async () => {
+    try {
+      const res1 = await fetch("http://localhost:5000/api/container/container");
+      const data1 = await res1.json();
+      setContainers(data1);
+
+      const res2 = await fetch("http://localhost:5000/api/itemtype/itemtype");
+      const data2 = await res2.json();
+      setItemTypes(data2);
+
+      const res3 = await fetch("http://localhost:5000/api/vehicle/vehicle");
+      const data3 = await res3.json();
+      setVehicles(data3);
+    } catch (error) {
+      console.error("Lỗi load dữ liệu:", error);
+    }
+  };
+
   useEffect(() => {
-    fetch("http://localhost:5000/api/container/container")
-      .then(res => res.json())
-      .then(data => setContainers(data));
-
-    fetch("http://localhost:5000/api/itemtype/itemtype")
-      .then(res => res.json())
-      .then(data => setItemTypes(data));
-
-    fetch("http://localhost:5000/api/vehicle/vehicle")
-      .then(res => res.json())
-      .then(data => setVehicles(data));
+    fetchData();
   }, []);
 
   const formatID = (id: number) => {
@@ -56,9 +65,8 @@ const Containers = () => {
     return found ? found.BienSo : id;
   };
 
-  const handleAdd = () => {
-    const newItem: Container = {
-      ContainerID: containers.length + 1,
+  const handleAdd = async () => {
+    const newItem = {
       LoaiHangID: "LH01",
       TrongLuong: 1000,
       TrangThai: "Mới",
@@ -68,7 +76,34 @@ const Containers = () => {
       ChuyenDiID: "CD01"
     };
 
-    setContainers([...containers, newItem]);
+    try {
+      await fetch("http://localhost:5000/api/container/container", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newItem)
+      });
+
+      fetchData();
+
+    } catch (error) {
+      console.error("Lỗi thêm:", error);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Bạn có chắc muốn xóa không?")) return;
+
+    try {
+      await fetch(`http://localhost:5000/api/container/container/${id}`, {
+        method: "DELETE"
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error("Lỗi xóa:", error);
+    }
   };
 
   const filteredContainers = containers.filter(c =>
@@ -124,7 +159,12 @@ const Containers = () => {
 
               <td>
                 <button className="btn-edit">Sửa</button>
-                <button className="btn-delete">Xóa</button>
+                <button
+                  className="btn-delete"
+                  onClick={() => handleDelete(c.ContainerID)}
+                >
+                  Xóa
+                </button>
               </td>
             </tr>
           ))}
