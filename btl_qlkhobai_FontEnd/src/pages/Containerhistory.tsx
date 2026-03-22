@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
 interface History {
@@ -9,9 +9,14 @@ interface History {
   ViTri: string;
 }
 
-const ContainerHistory: React.FC = () => {
+interface ContainerOption {
+  ContainerID: number;
+  formattedID: string;
+}
 
+const ContainerHistory: React.FC = () => {
   const [history, setHistory] = useState<History[]>([]);
+  const [containers, setContainers] = useState<ContainerOption[]>([]);
   const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
@@ -25,21 +30,53 @@ const ContainerHistory: React.FC = () => {
     ViTri: ""
   });
 
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/history/containerhistory");
-    const data = await res.json();
-    setHistory(data);
-  };
-
-  useEffect(() => {
-    fetchData();
+  // --------------------------
+  // FETCH HISTORY
+  // --------------------------
+  const fetchHistory = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/history/containerhistory");
+      const data = await res.json();
+      setHistory(data);
+    } catch (err) {
+      console.error("Error fetching history:", err);
+    }
   }, []);
 
-  const filteredHistory = history.filter((h) =>
-    h.ContainerID.toString().includes(search)
+  // --------------------------
+  // FETCH CONTAINERS
+  // --------------------------
+  const fetchContainers = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/container/container");
+      const data = await res.json();
+
+      const formatted = data.map((c: any) => ({
+        ContainerID: c.ContainerID,
+        formattedID: "CTN" + c.ContainerID.toString().padStart(3, "0")
+      }));
+
+      setContainers(formatted);
+    } catch (err) {
+      console.error("Error fetching containers:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+    fetchContainers();
+  }, [fetchHistory, fetchContainers]);
+
+  const formatID = (id: number) => "LS" + id.toString().padStart(3, "0");
+
+  // Search
+  const filteredHistory = history.filter(
+    (h) =>
+      formatID(h.LichSuID).includes(search) ||
+      h.ContainerID.toString().includes(search)
   );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value
@@ -48,12 +85,15 @@ const ContainerHistory: React.FC = () => {
 
   const handleOpenAdd = () => {
     setIsEdit(false);
+    setSelected(null);
+
     setForm({
       ContainerID: "",
       HoatDong: "",
       ThoiGian: "",
       ViTri: ""
     });
+
     setShowForm(true);
   };
 
@@ -64,7 +104,7 @@ const ContainerHistory: React.FC = () => {
     setForm({
       ContainerID: item.ContainerID.toString(),
       HoatDong: item.HoatDong,
-      ThoiGian: item.ThoiGian.slice(0, 16), 
+      ThoiGian: item.ThoiGian.slice(0, 16),
       ViTri: item.ViTri
     });
 
@@ -72,37 +112,44 @@ const ContainerHistory: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    const data = {
+    const body = {
       ...form,
-      ContainerID: Number(form.ContainerID)
+      ContainerID: Number(form.ContainerID),
     };
 
-    if (isEdit && selected) {
-      await fetch(`http://localhost:5000/api/history/containerhistory/${selected.LichSuID}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-    } else {
-      await fetch("http://localhost:5000/api/history/containerhistory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-    }
+    try {
+      if (isEdit && selected) {
+        await fetch(`http://localhost:5000/api/history/containerhistory/${selected.LichSuID}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+      } else {
+        await fetch("http://localhost:5000/api/history/containerhistory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+      }
 
-    setShowForm(false);
-    fetchData();
+      setShowForm(false);
+      fetchHistory();
+    } catch (err) {
+      console.error("Submit error:", err);
+    }
   };
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
-    await fetch(`http://localhost:5000/api/history/containerhistory/${id}`, {
-      method: "DELETE"
-    });
-
-    fetchData();
+    try {
+      await fetch(`http://localhost:5000/api/history/containerhistory/${id}`, {
+        method: "DELETE"
+      });
+      fetchHistory();
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
   };
 
   return (
@@ -113,7 +160,7 @@ const ContainerHistory: React.FC = () => {
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm lịch container..."
+            placeholder="🔍 Tìm lịch sử container..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -140,8 +187,8 @@ const ContainerHistory: React.FC = () => {
         <tbody>
           {filteredHistory.map((h) => (
             <tr key={h.LichSuID} onClick={() => handleOpenEdit(h)}>
-              <td>{h.LichSuID}</td>
-              <td>{h.ContainerID}</td>
+              <td>{formatID(h.LichSuID)}</td>
+              <td>{"CTN" + h.ContainerID.toString().padStart(3, "0")}</td>
               <td>{h.HoatDong}</td>
               <td>{new Date(h.ThoiGian).toLocaleString()}</td>
               <td>{h.ViTri}</td>
@@ -175,45 +222,57 @@ const ContainerHistory: React.FC = () => {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
+            <h3>{isEdit ? "Sửa Lịch Sử" : "Thêm Lịch Sử"}</h3>
 
-            <h3>{isEdit ? "Sửa" : "Thêm"} lịch sử</h3>
-
-            <input
+            <label>Container</label>
+            <select
               name="ContainerID"
-              placeholder="Container ID"
               value={form.ContainerID}
               onChange={handleChange}
-            />
+            >
+              <option value="">-- Chọn container --</option>
+              {containers.map((c) => (
+                <option key={c.ContainerID} value={c.ContainerID}>
+                  {c.formattedID}
+                </option>
+              ))}
+            </select>
 
-            <input
+            <label>Hành động</label>
+            <select
               name="HoatDong"
-              placeholder="Hoạt động"
               value={form.HoatDong}
               onChange={handleChange}
-            />
+            >
+              <option value="">-- Chọn --</option>
+              <option value="Nhập kho">Nhập kho</option>
+              <option value="Xuất kho">Xuất kho</option>
+              <option value="Di chuyển">Di chuyển</option>
+            </select>
 
+            <label>Thời gian</label>
             <input
-              name="ThoiGian"
               type="datetime-local"
+              name="ThoiGian"
               value={form.ThoiGian}
               onChange={handleChange}
             />
 
+            <label>Vị trí</label>
             <input
               name="ViTri"
-              placeholder="Vị trí"
+              placeholder="Nhập vị trí..."
               value={form.ViTri}
               onChange={handleChange}
             />
 
-            <button onClick={handleSubmit}>
-              {isEdit ? "Cập nhật" : "Thêm"}
+            <button className="btn-submit" onClick={handleSubmit}>
+              {isEdit ? "Lưu thay đổi" : "Lưu"}
             </button>
 
-            <button onClick={() => setShowForm(false)}>
+            <button className="btn-cancel" onClick={() => setShowForm(false)}>
               Hủy
             </button>
-
           </div>
         </div>
       )}

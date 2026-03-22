@@ -17,6 +17,7 @@ import Contracts from "./pages/Contracts";
 import Costs from "./pages/Costs";
 import Invoices from "./pages/Invoices";
 import Users from "./pages/Users";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
 
@@ -50,6 +51,8 @@ function App() {
         return <Invoices/>
       case "users":
         return <Users/>
+      case "dashboard":
+        return <Dashboard/>
 
       default:
         return <h2>Chưa có dữ liệu</h2>;
@@ -57,21 +60,23 @@ function App() {
   };
 
   return (
-    <>
+    <div className="app">
+  
       <Header />
-
+  
       <div className="container">
-
+  
         <Sidebar onSelect={setModule} />
-
+  
         <div className="main-content">
           {renderModule()}
         </div>
-
+  
       </div>
-
+  
       <Footer />
-    </>
+  
+    </div>
   );
 }
 
