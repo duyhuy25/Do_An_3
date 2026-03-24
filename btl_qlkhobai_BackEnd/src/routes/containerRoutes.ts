@@ -9,7 +9,7 @@ import {
 const router = Router();
 
 router.get("/container", getContainers);
-router.post("/container", addContainer);
+router.post("/addcontainer", addContainer);
 router.put("/container/:id", updateContainer);
 router.delete("/container/:id", deleteContainer);
 

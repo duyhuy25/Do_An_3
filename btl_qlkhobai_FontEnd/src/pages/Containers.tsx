@@ -209,13 +209,13 @@ const Containers: React.FC = () => {
           }
         );
       } else {
-        await fetch("http://localhost:5000/api/container/container", {
+        await fetch("http://localhost:5000/api/container/addcontainer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
       }
-
+    
       setShowForm(false);
       fetchContainers();
     } catch (err) {
@@ -226,7 +226,7 @@ const Containers: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa container này?")) return;
-
+  
     try {
       await fetch(`http://localhost:5000/api/container/container/${id}`, {
         method: "DELETE",
