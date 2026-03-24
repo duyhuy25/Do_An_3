@@ -41,7 +41,12 @@ const ContainerHistory: React.FC = () => {
       const res = await fetch(url);
       if (!res.ok) throw new Error("Lỗi tải lịch sử");
       const data = await res.json();
-      setHistory(data);
+      const cleanData = data.filter(
+        (item: any) => item.LichSuID && item.ContainerID
+      );
+      cleanData.sort((a: History, b: History) => a.LichSuID - b.LichSuID);
+      
+      setHistory(cleanData);
     } catch (err) {
       console.error("Error fetching history:", err);
     }
@@ -74,8 +79,10 @@ const ContainerHistory: React.FC = () => {
     fetchContainers().finally(() => setLoading(false));
   }, [fetchContainers]);
 
-  const formatID = (id: number) => "LS" + id.toString().padStart(3, "0");
-
+  const formatID = (id?: number) => {
+    if (!id) return "LS---";
+    return "LS" + id.toString().padStart(3, "0");
+  };
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -104,26 +111,45 @@ const ContainerHistory: React.FC = () => {
       alert("Vui lòng điền đầy đủ thông tin bắt buộc (*)");
       return;
     }
-
+  
     const body = {
       ...form,
       ContainerID: Number(form.ContainerID),
     };
-
+  
     try {
       const url = isEdit && selected
         ? `http://localhost:5000/api/history/containerhistory/${selected.LichSuID}`
         : "http://localhost:5000/api/history/addcontainerhistory";
-
+  
       const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-
+  
       if (res.ok) {
+        const data = await res.json();
+        console.log("DATA RETURN:", data);
+  
+        if (!data || !data.LichSuID || !data.ContainerID) {
+          console.warn("Data không hợp lệ, reload lại");
+          fetchHistory(search); 
+          setShowForm(false);
+          return;
+        }
+  
+        if (isEdit && selected) {
+          setHistory(prev =>
+            prev.map(item =>
+              item.LichSuID === selected.LichSuID ? data : item
+            )
+          );
+        } else {
+          setHistory(prev => [...prev, data]);
+        }
+  
         setShowForm(false);
-        fetchHistory(search);
       } else {
         alert("Lỗi server khi lưu dữ liệu.");
       }
@@ -181,13 +207,21 @@ const ContainerHistory: React.FC = () => {
               style={{ cursor: "pointer" }}
             >
               <td>{formatID(h.LichSuID)}</td>
-              <td>{"CTN" + h.ContainerID.toString().padStart(3, "0")}</td>
+              <td>
+                {h.ContainerID
+                  ? "CTN" + h.ContainerID.toString().padStart(3, "0")
+                  : "CTN---"}
+              </td>              
               <td>
                 <span className={`badge ${h.HoatDong.toLowerCase().replace(/\s/g, "-")}`}>
                   {h.HoatDong}
                 </span>
               </td>
-              <td>{new Date(h.ThoiGian).toLocaleString("vi-VN")}</td>
+              <td>
+                {h.ThoiGian
+                  ? new Date(h.ThoiGian).toLocaleString("vi-VN")
+                  : "-"}
+              </td>
               <td>{h.ViTri || "-"}</td>
               <td>
                 <button 
