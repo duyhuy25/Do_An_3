@@ -79,6 +79,8 @@ const Containers: React.FC = () => {
   }, [fetchOptions]);
 
   const formatID = (id: number) => "CTN" + id.toString().padStart(3, "0");
+  const formatContractID = (id: number) =>
+  "HD" + id.toString().padStart(3, "0");
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -191,7 +193,12 @@ const Containers: React.FC = () => {
               <td>{c.TrangThai}</td>
               <td>{khos.find(k => k.KhoID === c.KhoID)?.TenKho || "-"}</td>
               <td>{phuongTiens.find(pt => pt.PhuongTienID === c.PhuongTienID)?.BienSo || "-"}</td>
-              <td>{hopDongs.find(hd => hd.HopDongID === c.HopDongID)?.MaHopDong || c.HopDongID}</td>
+              <td>
+                {
+                  hopDongs.find(hd => hd.HopDongID === c.HopDongID)?.MaHopDong 
+                  || formatContractID(c.HopDongID)
+                }
+              </td>              
               <td>
                 <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(c); }}>Sửa</button>
                 <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(c.ContainerID); }}>Xóa</button>
@@ -241,7 +248,7 @@ const Containers: React.FC = () => {
               <option value="">-- Chọn hợp đồng --</option>
               {hopDongs.map(hd => (
                 <option key={hd.HopDongID} value={hd.HopDongID}>
-                  {hd.MaHopDong || `HD${hd.HopDongID}`}
+                  {hd.MaHopDong || formatContractID(hd.HopDongID)}
                 </option>
               ))}
             </select>
