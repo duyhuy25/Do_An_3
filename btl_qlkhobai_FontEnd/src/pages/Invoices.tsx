@@ -34,51 +34,55 @@ const Invoices: React.FC = () => {
     PhanTramDaThanhToan: "0",
   });
 
-  const fetchInvoices = useCallback(async () => {
+  const fetchInvoices = useCallback(async (searchTerm: string = "") => {
     try {
-      const res = await fetch("http://localhost:5000/api/invoice/invoice");
+      setLoading(true);
+
+      const url = searchTerm.trim()
+        ? `http://localhost:5000/api/invoice/invoice/search?search=${encodeURIComponent(searchTerm)}`
+        : "http://localhost:5000/api/invoice/invoice";
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Lỗi tải danh sách hóa đơn");
+
       const data = await res.json();
       setInvoices(data);
     } catch (err: any) {
       setError(err.message || "Không thể tải hóa đơn");
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   const fetchHopDongs = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/hopdong");
+      const res = await fetch("http://localhost:5000/api/contract/contract");
       const data = await res.json();
       setHopDongs(data);
     } catch (err) {
-      console.error("Error fetching hop dong:", err);
+      console.error(err);
     }
   }, []);
 
   useEffect(() => {
-    const loadAll = async () => {
-      setLoading(true);
-      setError(null);
-      await Promise.all([fetchInvoices(), fetchHopDongs()]);
-      setLoading(false);
-    };
-    loadAll();
+    fetchInvoices();
+    fetchHopDongs();
   }, [fetchInvoices, fetchHopDongs]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchInvoices(search);
+    }, 400);
+
+    return () => clearTimeout(timeout);
+  }, [search, fetchInvoices]);
 
   const formatID = (id: number) => "HDN" + id.toString().padStart(3, "0");
 
-  const filteredInvoices = invoices.filter((i) => {
-    const searchLower = search.toLowerCase();
-    const hd = hopDongs.find((h) => h.HopDongID === i.HopDongID);
-    return (
-      formatID(i.HoaDonID).toLowerCase().includes(searchLower) ||
-      hd?.MaHopDong?.toLowerCase().includes(searchLower) ||
-      i.SoTien.toString().includes(search) ||
-      i.PhanTramDaThanhToan.toString().includes(search) ||
-      (hd?.TenKH?.toLowerCase().includes(searchLower) ?? false)
-    );
-  });
+  const hopDongMap = Object.fromEntries(
+    hopDongs.map((h) => [h.HopDongID, h])
+  );
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -118,18 +122,20 @@ const Invoices: React.FC = () => {
       alert("Vui lòng chọn hợp đồng");
       return;
     }
+
     if (!form.SoTien || isNaN(Number(form.SoTien)) || Number(form.SoTien) <= 0) {
-      alert("Số tiền phải là số dương hợp lệ");
-      return;
-    }
-    if (!form.NgayLap) {
-      alert("Vui lòng chọn ngày lập hóa đơn");
+      alert("Số tiền phải là số dương");
       return;
     }
 
-    const phanTram = Number(form.PhanTramDaThanhToan);
-    if (isNaN(phanTram) || phanTram < 0 || phanTram > 100) {
-      alert("Phần trăm thanh toán phải từ 0 đến 100");
+    if (!form.NgayLap) {
+      alert("Vui lòng chọn ngày lập");
+      return;
+    }
+
+    const percent = Number(form.PhanTramDaThanhToan);
+    if (isNaN(percent) || percent < 0 || percent > 100) {
+      alert("Phần trăm phải từ 0 đến 100");
       return;
     }
 
@@ -137,7 +143,7 @@ const Invoices: React.FC = () => {
       ...form,
       HopDongID: Number(form.HopDongID),
       SoTien: Number(form.SoTien),
-      PhanTramDaThanhToan: phanTram,
+      PhanTramDaThanhToan: percent,
       NgayLap: form.NgayLap || null,
     };
 
@@ -152,7 +158,7 @@ const Invoices: React.FC = () => {
           }
         );
       } else {
-        await fetch("http://localhost:5000/api/invoice/invoice", {
+        await fetch("http://localhost:5000/api/invoice/addinvoice", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -160,24 +166,25 @@ const Invoices: React.FC = () => {
       }
 
       setShowForm(false);
-      fetchInvoices();
+      fetchInvoices(search);
     } catch (err) {
-      console.error("Submit error:", err);
-      alert("Có lỗi khi lưu hóa đơn");
+      console.error(err);
+      alert("Lỗi lưu hóa đơn");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa hóa đơn này?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
       await fetch(`http://localhost:5000/api/invoice/invoice/${id}`, {
         method: "DELETE",
       });
-      fetchInvoices();
+
+      fetchInvoices(search);
     } catch (err) {
-      console.error("Delete error:", err);
-      alert("Không thể xóa hóa đơn");
+      console.error(err);
+      alert("Không thể xóa");
     }
   };
 
@@ -192,7 +199,7 @@ const Invoices: React.FC = () => {
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm hóa đơn (ID, hợp đồng, số tiền, % thanh toán...)"
+            placeholder="🔍 Tìm hóa đơn..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -209,16 +216,17 @@ const Invoices: React.FC = () => {
           <tr>
             <th>ID</th>
             <th>Hợp đồng</th>
-            <th>Số tiền (VNĐ)</th>
+            <th>Số tiền</th>
             <th>Ngày lập</th>
-            <th>% đã thanh toán</th>
+            <th>% thanh toán</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
 
         <tbody>
-          {filteredInvoices.map((i) => {
-            const hd = hopDongs.find((h) => h.HopDongID === i.HopDongID);
+          {invoices.map((i) => {
+            const hd = hopDongMap[i.HopDongID];
+
             return (
               <tr key={i.HoaDonID} onClick={() => handleOpenEdit(i)}>
                 <td>{formatID(i.HoaDonID)}</td>
@@ -272,25 +280,21 @@ const Invoices: React.FC = () => {
               name="HopDongID"
               value={form.HopDongID}
               onChange={handleChange}
-              required
             >
               <option value="">-- Chọn hợp đồng --</option>
               {hopDongs.map((hd) => (
                 <option key={hd.HopDongID} value={hd.HopDongID}>
                   {hd.MaHopDong || `HD${hd.HopDongID}`}
-                  {hd.TenKH ? ` - ${hd.TenKH}` : ""}
                 </option>
               ))}
             </select>
 
-            <label>Số tiền (VNĐ) *</label>
+            <label>Số tiền *</label>
             <input
               type="number"
               name="SoTien"
-              placeholder="Nhập tổng số tiền hóa đơn"
               value={form.SoTien}
               onChange={handleChange}
-              required
             />
 
             <label>Ngày lập *</label>
@@ -299,14 +303,12 @@ const Invoices: React.FC = () => {
               name="NgayLap"
               value={form.NgayLap}
               onChange={handleChange}
-              required
             />
 
-            <label>Phần trăm đã thanh toán (%)</label>
+            <label>% thanh toán</label>
             <input
               type="number"
               name="PhanTramDaThanhToan"
-              placeholder="0 - 100"
               min="0"
               max="100"
               value={form.PhanTramDaThanhToan}
@@ -317,7 +319,11 @@ const Invoices: React.FC = () => {
               <button className="btn-submit" onClick={handleSubmit}>
                 {isEdit ? "Cập nhật" : "Thêm"}
               </button>
-              <button className="btn-cancel" onClick={() => setShowForm(false)}>
+
+              <button
+                className="btn-cancel"
+                onClick={() => setShowForm(false)}
+              >
                 Hủy
               </button>
             </div>
