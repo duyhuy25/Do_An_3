@@ -38,15 +38,24 @@ const Contracts: React.FC = () => {
     TrangThai: "Đang hoạt động",
   });
 
-  const fetchContracts = useCallback(async () => {
+  const fetchContracts = useCallback(async (searchTerm: string = "") => {
     try {
-      const res = await fetch("http://localhost:5000/api/contract/contract");
+      setLoading(true);
+
+      const url = searchTerm.trim()
+        ? `http://localhost:5000/api/contract/contract/search?search=${encodeURIComponent(searchTerm)}`
+        : "http://localhost:5000/api/contract/contract";
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Lỗi tải danh sách hợp đồng");
+
       const data = await res.json();
       setContracts(data);
     } catch (err: any) {
       setError(err.message || "Không thể tải hợp đồng");
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -61,28 +70,23 @@ const Contracts: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const loadAll = async () => {
-      setLoading(true);
-      setError(null);
-      await Promise.all([fetchContracts(), fetchKhachHangs()]);
-      setLoading(false);
-    };
-    loadAll();
+    fetchContracts();
+    fetchKhachHangs();
   }, [fetchContracts, fetchKhachHangs]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchContracts(search);
+    }, 400);
+
+    return () => clearTimeout(timeout);
+  }, [search, fetchContracts]);
 
   const formatID = (id: number) => "HD" + id.toString().padStart(3, "0");
 
-  const filteredContracts = contracts.filter((c) => {
-    const searchLower = search.toLowerCase();
-    const kh = khachHangs.find((k) => k.KhachHangID === c.KhachHangID);
-    return (
-      formatID(c.HopDongID).toLowerCase().includes(searchLower) ||
-      kh?.TenKH.toLowerCase().includes(searchLower) ||
-      c.LoaiDichVu.toLowerCase().includes(searchLower) ||
-      c.TrangThai.toLowerCase().includes(searchLower) ||
-      c.GiaTri.toString().includes(search)
-    );
-  });
+  const khMap = Object.fromEntries(
+    khachHangs.map((k) => [k.KhachHangID, k])
+  );
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -126,12 +130,19 @@ const Contracts: React.FC = () => {
       alert("Vui lòng chọn khách hàng");
       return;
     }
+
     if (!form.NgayKy) {
       alert("Vui lòng chọn ngày ký");
       return;
     }
+
     if (!form.GiaTri || isNaN(Number(form.GiaTri))) {
       alert("Giá trị phải là số hợp lệ");
+      return;
+    }
+
+    if (form.NgayHetHan && form.NgayHetHan < form.NgayKy) {
+      alert("Ngày hết hạn phải >= ngày ký");
       return;
     }
 
@@ -154,7 +165,7 @@ const Contracts: React.FC = () => {
           }
         );
       } else {
-        await fetch("http://localhost:5000/api/contract/contract", {
+        await fetch("http://localhost:5000/api/contract/addcontract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -162,7 +173,7 @@ const Contracts: React.FC = () => {
       }
 
       setShowForm(false);
-      fetchContracts();
+      fetchContracts(search);
     } catch (err) {
       console.error("Submit error:", err);
       alert("Có lỗi khi lưu hợp đồng");
@@ -176,7 +187,8 @@ const Contracts: React.FC = () => {
       await fetch(`http://localhost:5000/api/contract/contract/${id}`, {
         method: "DELETE",
       });
-      fetchContracts();
+
+      fetchContracts(search);
     } catch (err) {
       console.error("Delete error:", err);
       alert("Không thể xóa hợp đồng");
@@ -194,7 +206,7 @@ const Contracts: React.FC = () => {
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm hợp đồng (ID, khách hàng, loại dịch vụ...)"
+            placeholder="🔍 Tìm hợp đồng..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -221,22 +233,26 @@ const Contracts: React.FC = () => {
         </thead>
 
         <tbody>
-          {filteredContracts.map((c) => {
-            const kh = khachHangs.find((k) => k.KhachHangID === c.KhachHangID);
+          {contracts.map((c) => {
+            const kh = khMap[c.KhachHangID];
+
             return (
               <tr key={c.HopDongID} onClick={() => handleOpenEdit(c)}>
                 <td>{formatID(c.HopDongID)}</td>
                 <td>{kh ? `${kh.TenKH} (${kh.SDT})` : c.KhachHangID}</td>
+
                 <td>
                   {c.NgayKy
                     ? new Date(c.NgayKy).toLocaleDateString("vi-VN")
                     : "-"}
                 </td>
+
                 <td>
                   {c.NgayHetHan
                     ? new Date(c.NgayHetHan).toLocaleDateString("vi-VN")
                     : "-"}
                 </td>
+
                 <td>{c.LoaiDichVu}</td>
                 <td>{c.GiaTri.toLocaleString("vi-VN")}</td>
                 <td>{c.TrangThai}</td>
@@ -278,7 +294,6 @@ const Contracts: React.FC = () => {
               name="KhachHangID"
               value={form.KhachHangID}
               onChange={handleChange}
-              required
             >
               <option value="">-- Chọn khách hàng --</option>
               {khachHangs.map((kh) => (
@@ -294,7 +309,6 @@ const Contracts: React.FC = () => {
               name="NgayKy"
               value={form.NgayKy}
               onChange={handleChange}
-              required
             />
 
             <label>Ngày hết hạn</label>
@@ -308,7 +322,6 @@ const Contracts: React.FC = () => {
             <label>Loại dịch vụ</label>
             <input
               name="LoaiDichVu"
-              placeholder="Ví dụ: Vận chuyển container, Lưu kho..."
               value={form.LoaiDichVu}
               onChange={handleChange}
             />
@@ -317,14 +330,16 @@ const Contracts: React.FC = () => {
             <input
               type="number"
               name="GiaTri"
-              placeholder="Nhập giá trị hợp đồng"
               value={form.GiaTri}
               onChange={handleChange}
-              required
             />
 
             <label>Trạng thái</label>
-            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+            <select
+              name="TrangThai"
+              value={form.TrangThai}
+              onChange={handleChange}
+            >
               <option value="Đang hoạt động">Đang hoạt động</option>
               <option value="Hết hạn">Hết hạn</option>
               <option value="Chấm dứt">Chấm dứt</option>
@@ -335,7 +350,11 @@ const Contracts: React.FC = () => {
               <button className="btn-submit" onClick={handleSubmit}>
                 {isEdit ? "Cập nhật" : "Thêm"}
               </button>
-              <button className="btn-cancel" onClick={() => setShowForm(false)}>
+
+              <button
+                className="btn-cancel"
+                onClick={() => setShowForm(false)}
+              >
                 Hủy
               </button>
             </div>
