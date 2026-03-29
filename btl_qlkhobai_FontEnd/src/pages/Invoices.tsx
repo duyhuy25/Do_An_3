@@ -188,7 +188,7 @@ const Invoices: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+  {loading && <div className="loading">Đang tải...</div>}
   if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (

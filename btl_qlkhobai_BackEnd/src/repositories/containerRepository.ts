@@ -85,6 +85,8 @@ export const searchContainer = async (searchTerm = "") => {
         OR k.TenKho LIKE @search
         OR pt.BienSo LIKE @search
         OR kh.TenKH LIKE @search
+        OR ('HD' + RIGHT('000' + CAST(c.HopDongID AS VARCHAR(3)), 3)) LIKE @search
+        OR CAST(c.HopDongID AS VARCHAR(10)) LIKE @search
         OR CAST(c.TrongLuong AS VARCHAR(20)) LIKE @search
     `;
     request.input("search", sql.NVarChar(100), `%${term}%`);

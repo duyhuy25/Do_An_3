@@ -79,7 +79,7 @@ export const searchHistory = async (searchTerm = "") => {
     request.input("search", sql.NVarChar(100), `%${term}%`);
   }
 
-  query += " ORDER BY ls.ThoiGian DESC";
+  query += " ORDER BY ls.ThoiGian ASC";
 
   const result = await request.query(query);
   return result.recordset;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
 interface Trip {
@@ -13,9 +13,11 @@ interface Trip {
 }
 
 const Trips: React.FC = () => {
-
   const [trips, setTrips] = useState<Trip[]>([]);
   const [search, setSearch] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -31,24 +33,44 @@ const Trips: React.FC = () => {
     TrangThai: ""
   });
 
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/trip/trip");
-    const data = await res.json();
-    setTrips(data);
-  };
+  const fetchTrips = useCallback(async (searchTerm: string = "") => {
+    try {
+      setLoading(true);
+
+      const url = searchTerm.trim()
+        ? `http://localhost:5000/api/trip/trip/search?search=${encodeURIComponent(searchTerm)}`
+        : "http://localhost:5000/api/trip/trip";
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Lỗi tải danh sách chuyến");
+
+      const data = await res.json();
+      setTrips(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchTrips();
+  }, [fetchTrips]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchTrips(search);
+    }, 400);
+
+    return () => clearTimeout(timeout);
+  }, [search, fetchTrips]);
 
   const formatID = (id: number) =>
     "TRP" + id.toString().padStart(3, "0");
 
-  const filtered = trips.filter((t) =>
-    t.MaChuyen.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value
@@ -80,8 +102,8 @@ const Trips: React.FC = () => {
       MaChuyen: item.MaChuyen,
       CangDiID: item.CangDiID,
       CangDenID: item.CangDenID,
-      NgayKhoiHanh: item.NgayKhoiHanh,
-      NgayDuKienDen: item.NgayDuKienDen,
+      NgayKhoiHanh: item.NgayKhoiHanh?.slice(0, 10) || "",
+      NgayDuKienDen: item.NgayDuKienDen?.slice(0, 10) || "",
       PhuongTienID: item.PhuongTienID,
       TrangThai: item.TrangThai
     });
@@ -90,27 +112,32 @@ const Trips: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    const data = { ...form };
+    const body = { ...form };
 
-    if (isEdit && selected) {
-      await fetch(
-        `http://localhost:5000/api/trip/trip/${selected.ChuyenDiID}`,
-        {
-          method: "PUT",
+    try {
+      if (isEdit && selected) {
+        await fetch(
+          `http://localhost:5000/api/trip/trip/${selected.ChuyenDiID}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          }
+        );
+      } else {
+        await fetch("http://localhost:5000/api/trip/addtrip", {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }
-      );
-    } else {
-      await fetch("http://localhost:5000/api/trip/trip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-    }
+          body: JSON.stringify(body)
+        });
+      }
 
-    setShowForm(false);
-    fetchData();
+      setShowForm(false);
+      fetchTrips(search);
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi lưu dữ liệu");
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -120,8 +147,11 @@ const Trips: React.FC = () => {
       method: "DELETE"
     });
 
-    fetchData();
+    fetchTrips(search);
   };
+
+  {loading && <div className="loading">Đang tải...</div>}
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
@@ -159,14 +189,14 @@ const Trips: React.FC = () => {
         </thead>
 
         <tbody>
-          {filtered.map((t) => (
+          {trips.map((t) => (
             <tr key={t.ChuyenDiID} onClick={() => handleOpenEdit(t)}>
               <td>{formatID(t.ChuyenDiID)}</td>
               <td>{t.MaChuyen}</td>
               <td>{t.CangDiID}</td>
               <td>{t.CangDenID}</td>
-              <td>{new Date(t.NgayKhoiHanh).toLocaleDateString()}</td>
-              <td>{new Date(t.NgayDuKienDen).toLocaleDateString()}</td>
+              <td>{t.NgayKhoiHanh ? new Date(t.NgayKhoiHanh).toLocaleDateString("vi-VN") : "-"}</td>
+              <td>{t.NgayDuKienDen ? new Date(t.NgayDuKienDen).toLocaleDateString("vi-VN") : "-"}</td>
               <td>{t.PhuongTienID}</td>
               <td>{t.TrangThai}</td>
 
@@ -201,13 +231,15 @@ const Trips: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} chuyến đi</h3>
 
-            <input name="MaChuyen" placeholder="Mã chuyến" value={form.MaChuyen} onChange={handleChange} />
-            <input name="CangDiID" placeholder="Cảng đi" value={form.CangDiID} onChange={handleChange} />
-            <input name="CangDenID" placeholder="Cảng đến" value={form.CangDenID} onChange={handleChange} />
-            <input name="NgayKhoiHanh" placeholder="Ngày khởi hành" value={form.NgayKhoiHanh} onChange={handleChange} />
-            <input name="NgayDuKienDen" placeholder="Ngày dự kiến đến" value={form.NgayDuKienDen} onChange={handleChange} />
-            <input name="PhuongTienID" placeholder="Phương tiện" value={form.PhuongTienID} onChange={handleChange} />
-            <input name="TrangThai" placeholder="Trạng thái" value={form.TrangThai} onChange={handleChange} />
+            <input name="MaChuyen" value={form.MaChuyen} onChange={handleChange} placeholder="Mã chuyến" />
+            <input name="CangDiID" value={form.CangDiID} onChange={handleChange} placeholder="Cảng đi" />
+            <input name="CangDenID" value={form.CangDenID} onChange={handleChange} placeholder="Cảng đến" />
+
+            <input type="date" name="NgayKhoiHanh" value={form.NgayKhoiHanh} onChange={handleChange} />
+            <input type="date" name="NgayDuKienDen" value={form.NgayDuKienDen} onChange={handleChange} />
+
+            <input name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange} placeholder="Phương tiện" />
+            <input name="TrangThai" value={form.TrangThai} onChange={handleChange} placeholder="Trạng thái" />
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>
