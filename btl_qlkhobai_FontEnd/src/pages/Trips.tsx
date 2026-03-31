@@ -32,7 +32,7 @@ const Trips: React.FC = () => {
     PhuongTienID: "",
     TrangThai: ""
   });
-
+  
   const fetchTrips = useCallback(async (searchTerm: string = "") => {
     try {
       setLoading(true);

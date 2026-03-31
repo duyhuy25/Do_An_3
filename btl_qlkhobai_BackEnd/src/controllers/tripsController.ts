@@ -7,7 +7,6 @@ import {
   searchTripService
 } from "../services/tripsServices";
 
-// GET
 export const getTrip = async (req: Request, res: Response) => {
   try {
     const data = await fetchTrip();
