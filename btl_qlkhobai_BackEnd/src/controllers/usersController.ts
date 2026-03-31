@@ -1,18 +1,18 @@
 import { Request, Response } from "express";
 import {
-  fetchUser,
+  fetchAllUsers,
   addUserService,
   updateUserService,
   deleteUserService,
-  searchUserService
+  searchUsersService,
 } from "../services/usersServices";
 
 export const getUser = async (req: Request, res: Response) => {
   try {
-    const data = await fetchUser();
+    const data = await fetchAllUsers();
     res.json(data);
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("Error fetching users:", error);
     res.status(500).json({ message: "Lỗi server" });
   }
 };
@@ -20,19 +20,24 @@ export const getUser = async (req: Request, res: Response) => {
 export const addUser = async (req: Request, res: Response) => {
   try {
     await addUserService(req.body);
-    res.json({ message: "Thêm user thành công" });
-  } catch (error) {
-    console.error(error);
+    res.status(201).json({ message: "Thêm user thành công" });
+  } catch (error: any) {
+    console.error("Error adding user:", error);
     res.status(500).json({ message: "Lỗi server" });
   }
 };
+
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "ID không hợp lệ" });
+    }
+
     await updateUserService(id, req.body);
     res.json({ message: "Cập nhật thành công" });
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("Error updating user:", error);
     res.status(500).json({ message: "Lỗi server" });
   }
 };
@@ -40,21 +45,25 @@ export const updateUser = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "ID không hợp lệ" });
+    }
+
     await deleteUserService(id);
     res.json({ message: "Xóa thành công" });
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("Error deleting user:", error);
     res.status(500).json({ message: "Lỗi server" });
   }
 };
 
 export const searchUser = async (req: Request, res: Response) => {
   try {
-    const search = req.query.search as string;
-    const data = await searchUserService(search);
+    const search = (req.query.search as string) || "";
+    const data = await searchUsersService(search);
     res.json(data);
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("Error searching users:", error);
     res.status(500).json({ message: "Lỗi server" });
   }
 };

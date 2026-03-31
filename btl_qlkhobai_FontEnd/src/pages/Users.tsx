@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
 interface User {
@@ -8,13 +8,16 @@ interface User {
   HoTen: string;
   Email: string;
   TrangThai: string;
-  RoleID: number;
+  TenVaiTro?: string;
+  RoleID: number | null | undefined;   // Cho phép null/undefined
 }
 
 const Users: React.FC = () => {
-
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -25,47 +28,60 @@ const Users: React.FC = () => {
     PasswordHash: "",
     HoTen: "",
     Email: "",
-    TrangThai: "",
-    RoleID: ""
+    TrangThai: "Hoạt động",
+    RoleID: "",
   });
 
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/user/user");
-    const data = await res.json();
-    setUsers(data);
-  };
+  const fetchUsers = useCallback(async (searchTerm: string = "") => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  useEffect(() => {
-    fetchData();
+      const url = searchTerm.trim()
+        ? `http://localhost:5000/api/user/user/search?search=${encodeURIComponent(searchTerm)}`
+        : `http://localhost:5000/api/user/user`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Lỗi tải danh sách người dùng");
+
+      const data = await res.json();
+      setUsers(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const formatID = (id: number) =>
-    "USR" + id.toString().padStart(3, "0");
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
-  const filtered = users.filter((u) =>
-    u.HoTen.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchUsers(search);
+    }, 400);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
+    return () => clearTimeout(timeout);
+  }, [search, fetchUsers]);
+
+  const formatID = (id: number) => "USR" + id.toString().padStart(3, "0");
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleOpenAdd = () => {
     setIsEdit(false);
     setSelected(null);
-
     setForm({
       Username: "",
       PasswordHash: "",
       HoTen: "",
       Email: "",
-      TrangThai: "",
-      RoleID: ""
+      TrangThai: "Hoạt động",
+      RoleID: "1",
     });
-
     setShowForm(true);
   };
 
@@ -74,59 +90,95 @@ const Users: React.FC = () => {
     setSelected(item);
 
     setForm({
-      Username: item.Username,
-      PasswordHash: item.PasswordHash,
-      HoTen: item.HoTen,
-      Email: item.Email,
-      TrangThai: item.TrangThai,
-      RoleID: item.RoleID.toString()
+      Username: item.Username || "",
+      PasswordHash: "",
+      HoTen: item.HoTen || "",
+      Email: item.Email || "",
+      TrangThai: item.TrangThai || "Hoạt động",
+      RoleID: (item.RoleID ?? 1).toString(),     // ← Đây là dòng quan trọng nhất
     });
 
     setShowForm(true);
   };
 
   const handleSubmit = async () => {
-    const data = {
-      ...form,
-      RoleID: Number(form.RoleID)
-    };
-
-    if (isEdit && selected) {
-      await fetch(
-        `http://localhost:5000/api/user/user/${selected.UserID}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }
-      );
-    } else {
-      await fetch("http://localhost:5000/api/user/user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    if (!form.Username || !form.HoTen || !form.RoleID) {
+      alert("Vui lòng nhập đầy đủ thông tin bắt buộc (Username, Họ tên, RoleID)!");
+      return;
     }
-
-    setShowForm(false);
-    fetchData();
+  
+    const payload: any = {
+      Username: form.Username,
+      HoTen: form.HoTen,
+      Email: form.Email || null,
+      TrangThai: form.TrangThai || "Hoạt động",
+      RoleID: Number(form.RoleID),        // Ép kiểu số
+    };
+  
+    if (form.PasswordHash && form.PasswordHash.trim() !== "") {
+      payload.PasswordHash = form.PasswordHash;
+    }
+  
+    try {
+      let res: Response;
+  
+      if (isEdit && selected) {
+        res = await fetch(
+          `http://localhost:5000/api/user/user/${selected.UserID}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          }
+        );
+      } else {
+        if (!form.PasswordHash || !form.PasswordHash.trim()) {
+          alert("Vui lòng nhập mật khẩu khi thêm người dùng mới!");
+          return;
+        }
+        res = await fetch("http://localhost:5000/api/user/adduser", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      }
+  
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Lỗi server");
+      }
+  
+      alert(isEdit ? "Cập nhật thành công!" : "Thêm người dùng thành công!");
+      setShowForm(false);
+      fetchUsers(search);
+    } catch (err: any) {
+      console.error(err);
+      alert("Lỗi: " + (err.message || "Vui lòng thử lại"));
+    }
   };
-
+  
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
-    await fetch(`http://localhost:5000/api/user/user/${id}`, {
-      method: "DELETE"
-    });
-
-    fetchData();
+    try {
+      const res = await fetch(`http://localhost:5000/api/user/user/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      alert("Xóa thành công!");
+      fetchUsers(search);
+    } catch {
+      alert("Lỗi khi xóa");
+    }
   };
+
+  const maskPassword = (password: string): string => password ? "*".repeat(8) : "Chưa có";
+
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
       <div className="header">
         <h2>👤 Danh sách người dùng</h2>
-
         <div className="toolbar">
           <input
             type="text"
@@ -135,7 +187,6 @@ const Users: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-
           <button className="btn-add" onClick={handleOpenAdd}>
             + Thêm người dùng
           </button>
@@ -155,35 +206,27 @@ const Users: React.FC = () => {
             <th>Tác vụ</th>
           </tr>
         </thead>
-
         <tbody>
-          {filtered.map((u) => (
+          {users.map((u) => (
             <tr key={u.UserID} onClick={() => handleOpenEdit(u)}>
               <td>{formatID(u.UserID)}</td>
               <td>{u.Username}</td>
-              <td>{u.PasswordHash}</td>
+              <td className="password-cell">{maskPassword(u.PasswordHash)}</td>
               <td>{u.HoTen}</td>
               <td>{u.Email}</td>
               <td>{u.TrangThai}</td>
-              <td>{u.RoleID}</td>
+              <td>{u.TenVaiTro || u.RoleID || "-"}</td>
 
               <td>
                 <button
                   className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(u);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); handleOpenEdit(u); }}
                 >
                   Sửa
                 </button>
-
                 <button
                   className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(u.UserID);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); handleDelete(u.UserID); }}
                 >
                   Xóa
                 </button>
@@ -198,18 +241,36 @@ const Users: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} người dùng</h3>
 
-            <input name="Username" placeholder="Tài khoản" value={form.Username} onChange={handleChange} />
-            <input name="PasswordHash" placeholder="Mật khẩu" value={form.PasswordHash} onChange={handleChange} />
-            <input name="HoTen" placeholder="Họ tên" value={form.HoTen} onChange={handleChange} />
-            <input name="Email" placeholder="Email" value={form.Email} onChange={handleChange} />
-            <input name="TrangThai" placeholder="Trạng thái" value={form.TrangThai} onChange={handleChange} />
-            <input name="RoleID" placeholder="Vai trò" value={form.RoleID} onChange={handleChange} />
+            <input name="Username" value={form.Username} onChange={handleChange} placeholder="Tài khoản" />
+            <input 
+              name="PasswordHash" 
+              type="password"
+              value={form.PasswordHash} 
+              onChange={handleChange} 
+              placeholder={isEdit ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu"} 
+            />
+            <input name="HoTen" value={form.HoTen} onChange={handleChange} placeholder="Họ tên" />
+            <input name="Email" value={form.Email} onChange={handleChange} placeholder="Email" />
+
+            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option value="Hoạt động">Hoạt động</option>
+              <option value="Khóa">Khóa</option>
+              <option value="Chờ duyệt">Chờ duyệt</option>
+            </select>
+
+            <input 
+              name="RoleID" 
+              type="number" 
+              value={form.RoleID} 
+              onChange={handleChange} 
+              placeholder="RoleID" 
+              min="1"
+            />
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>
                 {isEdit ? "Cập nhật" : "Thêm"}
               </button>
-
               <button className="btn-cancel" onClick={() => setShowForm(false)}>
                 Hủy
               </button>

@@ -24,11 +24,11 @@ export const createUser = async (data: any) => {
   const pool = await poolPromise;
 
   await pool.request()
-    .input("Username", sql.NVarChar, data.Username)
-    .input("PasswordHash", sql.NVarChar, data.PasswordHash)
-    .input("HoTen", sql.NVarChar, data.HoTen)
-    .input("Email", sql.NVarChar, data.Email)
-    .input("TrangThai", sql.NVarChar, data.TrangThai)
+    .input("Username", sql.NVarChar(50), data.Username)
+    .input("PasswordHash", sql.NVarChar(255), data.PasswordHash)
+    .input("HoTen", sql.NVarChar(100), data.HoTen)
+    .input("Email", sql.NVarChar(100), data.Email)
+    .input("TrangThai", sql.NVarChar(50), data.TrangThai || "Hoạt động")
     .input("RoleID", sql.Int, data.RoleID)
     .query(`
       INSERT INTO Users 
@@ -40,16 +40,18 @@ export const createUser = async (data: any) => {
 
 export const updateUserById = async (id: number, data: any) => {
   const pool = await poolPromise;
+  const roleId = data.RoleID ? Number(data.RoleID) : 1;  
 
   await pool.request()
     .input("UserID", sql.Int, id)
-    .input("Username", sql.NVarChar, data.Username)
-    .input("HoTen", sql.NVarChar, data.HoTen)
-    .input("Email", sql.NVarChar, data.Email)
-    .input("TrangThai", sql.NVarChar, data.TrangThai)
-    .input("RoleID", sql.Int, data.RoleID)
+    .input("Username", sql.NVarChar(50), data.Username)
+    .input("HoTen", sql.NVarChar(100), data.HoTen)
+    .input("Email", sql.NVarChar(100), data.Email)
+    .input("TrangThai", sql.NVarChar(50), data.TrangThai || "Hoạt động")
+    .input("RoleID", sql.Int, roleId)
     .query(`
-      UPDATE Users SET
+      UPDATE Users 
+      SET 
         Username = @Username,
         HoTen = @HoTen,
         Email = @Email,
@@ -67,10 +69,10 @@ export const deleteUserById = async (id: number) => {
     .query(`DELETE FROM Users WHERE UserID = @UserID`);
 };
 
-export const searchUserByKeyword = async (searchTerm = "") => {
+export const searchUserByKeyword = async (searchTerm: string = "") => {
   const pool = await poolPromise;
   const request = pool.request();
-  const term = searchTerm?.trim();
+  const term = searchTerm.trim();
 
   let query = `
     SELECT 
