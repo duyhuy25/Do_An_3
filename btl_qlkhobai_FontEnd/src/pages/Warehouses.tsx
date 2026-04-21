@@ -1,61 +1,27 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
-interface Warehouse {
-  KhoID: number;
-  TenKho: string;
-  SucChua: number;
-  SoLuongContainer: number;
-  DiaChi: string;
-  NhanVienQuanLy: string;
-}
+  interface Warehouse {
+    KhoID: number;
+    TenKho: string;
+    SucChua: number;
+    SoLuongContainer: number;
+    DiaChi: string;
+    NhanVienQuanLy: string;
+  }
 
-const Warehouses: React.FC = () => {
+  const Warehouses: React.FC = () => {
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+    const [search, setSearch] = useState("");
 
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [search, setSearch] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  const [showForm, setShowForm] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [selected, setSelected] = useState<Warehouse | null>(null);
+    const [showForm, setShowForm] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [selected, setSelected] = useState<Warehouse | null>(null);
 
-  const [form, setForm] = useState({
-    TenKho: "",
-    SucChua: "",
-    SoLuongContainer: "",
-    DiaChi: "",
-    NhanVienQuanLy: ""
-  });
-
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/warehouse/warehouse");
-    const data = await res.json();
-    setWarehouses(data);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const formatID = (id: number) =>
-    "WH" + id.toString().padStart(3, "0");
-
-  const filtered = warehouses.filter((w) =>
-    w.TenKho.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleOpenAdd = () => {
-    setIsEdit(false);
-    setSelected(null);
-
-    setForm({
+    const [form, setForm] = useState({
       TenKho: "",
       SucChua: "",
       SoLuongContainer: "",
@@ -63,156 +29,237 @@ const Warehouses: React.FC = () => {
       NhanVienQuanLy: ""
     });
 
-    setShowForm(true);
-  };
+    const fetchWarehouses = useCallback(async (searchTerm: string = "") => {
+      try {
+        setLoading(true);
 
-  const handleOpenEdit = (item: Warehouse) => {
-    setIsEdit(true);
-    setSelected(item);
+        const url = searchTerm.trim()
+          ? `http://localhost:5000/api/warehouse/warehouse/search?search=${encodeURIComponent(searchTerm)}`
+          : `http://localhost:5000/api/warehouse/warehouse`;
 
-    setForm({
-      TenKho: item.TenKho,
-      SucChua: item.SucChua.toString(),
-      SoLuongContainer: item.SoLuongContainer.toString(),
-      DiaChi: item.DiaChi,
-      NhanVienQuanLy: item.NhanVienQuanLy
-    });
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Lỗi tải danh sách kho");
 
-    setShowForm(true);
-  };
+        const data = await res.json();
+        setWarehouses(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }, []);
 
-  const handleSubmit = async () => {
-    const data = {
-      ...form,
-      SucChua: Number(form.SucChua),
-      SoLuongContainer: Number(form.SoLuongContainer)
+    useEffect(() => {
+      fetchWarehouses();
+    }, [fetchWarehouses]);
+
+    useEffect(() => {
+      const timeout = setTimeout(() => {
+        fetchWarehouses(search);
+      }, 400);
+
+      return () => clearTimeout(timeout);
+    }, [search, fetchWarehouses]);
+
+    const formatID = (id: number) =>
+      "WH" + id.toString().padStart(3, "0");
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+      setForm({
+        ...form,
+        [e.target.name]: e.target.value
+      });
     };
 
-    if (isEdit && selected) {
-      await fetch(
-        `http://localhost:5000/api/warehouse/warehouse/${selected.KhoID}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }
-      );
-    } else {
-      await fetch("http://localhost:5000/api/warehouse/warehouse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+    const handleOpenAdd = () => {
+      setIsEdit(false);
+      setSelected(null);
+
+      setForm({
+        TenKho: "",
+        SucChua: "",
+        SoLuongContainer: "",
+        DiaChi: "",
+        NhanVienQuanLy: ""
       });
-    }
 
-    setShowForm(false);
-    fetchData();
-  };
+      setShowForm(true);
+    };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+    const handleOpenEdit = (item: Warehouse) => {
+      setIsEdit(true);
+      setSelected(item);
 
-    await fetch(`http://localhost:5000/api/warehouse/warehouse/${id}`, {
-      method: "DELETE"
-    });
+      setForm({
+        TenKho: item.TenKho || "",
+        SucChua: item.SucChua?.toString() || "",
+        SoLuongContainer: item.SoLuongContainer?.toString() || "",
+        DiaChi: item.DiaChi || "",
+        NhanVienQuanLy: item.NhanVienQuanLy || ""
+      });
 
-    fetchData();
-  };
+      setShowForm(true);
+    };
 
-  return (
-    <div>
-      <div className="header">
-        <h2>🏭 Danh sách kho</h2>
+    const handleSubmit = async () => {
+      if (!form.TenKho) {
+        alert("Vui lòng nhập tên kho!");
+        return;
+      }
 
-        <div className="toolbar">
-          <input
-            type="text"
-            placeholder="🔍 Tìm kho..."
-            className="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      const payload = {
+        ...form,
+        SucChua: form.SucChua ? Number(form.SucChua) : 0,
+        SoLuongContainer: form.SoLuongContainer ? Number(form.SoLuongContainer) : 0
+      };
 
-          <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm kho
-          </button>
-        </div>
-      </div>
+      try {
+        let res: Response;
 
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tên kho</th>
-            <th>Sức chứa</th>
-            <th>Số lượng container</th>
-            <th>Địa chỉ</th>
-            <th>Quản lý</th>
-            <th>Tác vụ</th>
-          </tr>
-        </thead>
+        if (isEdit && selected) {
+          res = await fetch(
+            `http://localhost:5000/api/warehouse/warehouse/${selected.KhoID}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            }
+          );
+        } else {
+          res = await fetch("http://localhost:5000/api/warehouse/warehouse", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }
 
-        <tbody>
-          {filtered.map((w) => (
-            <tr key={w.KhoID} onClick={() => handleOpenEdit(w)}>
-              <td>{formatID(w.KhoID)}</td>
-              <td>{w.TenKho}</td>
-              <td>{w.SucChua}</td>
-              <td>{w.SoLuongContainer}</td>
-              <td>{w.DiaChi}</td>
-              <td>{w.NhanVienQuanLy}</td>
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Lỗi server");
+        }
 
-              <td>
-                <button
-                  className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(w);
-                  }}
-                >
-                  Sửa
-                </button>
+        alert(isEdit ? "Cập nhật thành công!" : "Thêm kho thành công!");
+        setShowForm(false);
+        fetchWarehouses(search);
+      } catch (err: any) {
+        alert("Lỗi: " + err.message);
+      }
+    };
 
-                <button
-                  className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(w.KhoID);
-                  }}
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    const handleDelete = async (id: number) => {
+      if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
-      {showForm && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} kho</h3>
+      try {
+        const res = await fetch(`http://localhost:5000/api/warehouse/warehouse/${id}`, {
+          method: "DELETE"
+        });
 
-            <input name="TenKho" placeholder="Tên kho" value={form.TenKho} onChange={handleChange} />
-            <input name="SucChua" placeholder="Sức chứa" value={form.SucChua} onChange={handleChange} />
-            <input name="SoLuongContainer" placeholder="Số lượng container" value={form.SoLuongContainer} onChange={handleChange} />
-            <input name="DiaChi" placeholder="Địa chỉ" value={form.DiaChi} onChange={handleChange} />
-            <input name="NhanVienQuanLy" placeholder="Quản lý" value={form.NhanVienQuanLy} onChange={handleChange} />
+        if (!res.ok) throw new Error();
 
-            <div className="modal-actions">
-              <button className="btn-submit" onClick={handleSubmit}>
-                {isEdit ? "Cập nhật" : "Thêm"}
-              </button>
+        alert("Xóa thành công!");
+        fetchWarehouses(search);
+      } catch {
+        alert("Lỗi khi xóa");
+      }
+    };
 
-              <button className="btn-cancel" onClick={() => setShowForm(false)}>
-                Hủy
-              </button>
-            </div>
+    if (error) return <div className="error">Lỗi: {error}</div>;
+
+    return (
+      <div>
+        <div className="header">
+          <h2>🏭 Danh sách kho</h2>
+
+          <div className="toolbar">
+            <input
+              type="text"
+              placeholder="🔍 Tìm kho..."
+              className="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoComplete="off"
+            />
+
+            <button className="btn-add" onClick={handleOpenAdd}>
+              + Thêm kho
+            </button>
           </div>
         </div>
-      )}
-    </div>
-  );
-};
 
-export default Warehouses;
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên kho</th>
+              <th>Sức chứa</th>
+              <th>Số lượng container</th>
+              <th>Địa chỉ</th>
+              <th>Quản lý</th>
+              <th>Tác vụ</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {warehouses.map((w) => (
+              <tr key={w.KhoID} onClick={() => handleOpenEdit(w)}>
+                <td>{formatID(w.KhoID)}</td>
+                <td>{w.TenKho}</td>
+                <td>{w.SucChua}</td>
+                <td>{w.SoLuongContainer}</td>
+                <td>{w.DiaChi}</td>
+                <td>{w.NhanVienQuanLy}</td>
+
+                <td>
+                  <button
+                    className="btn-edit"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEdit(w);
+                    }}
+                  >
+                    Sửa
+                  </button>
+
+                  <button
+                    className="btn-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(w.KhoID);
+                    }}
+                  >
+                    Xóa
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {showForm && (
+          <div className="modal">
+            <div className="modal-content">
+              <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} kho</h3>
+
+              <input name="TenKho" value={form.TenKho} onChange={handleChange} placeholder="Tên kho" />
+              <input name="SucChua" value={form.SucChua} onChange={handleChange} placeholder="Sức chứa" />
+              <input name="SoLuongContainer" value={form.SoLuongContainer} onChange={handleChange} placeholder="Số lượng container" />
+              <input name="DiaChi" value={form.DiaChi} onChange={handleChange} placeholder="Địa chỉ" />
+              <input name="NhanVienQuanLy" value={form.NhanVienQuanLy} onChange={handleChange} placeholder="Quản lý" />
+
+              <div className="modal-actions">
+                <button className="btn-submit" onClick={handleSubmit}>
+                  {isEdit ? "Cập nhật" : "Thêm"}
+                </button>
+
+                <button className="btn-cancel" onClick={() => setShowForm(false)}>
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  export default Warehouses;
