@@ -7,12 +7,13 @@ interface Invoice {
   SoTien: number;
   NgayLap: string;
   PhanTramDaThanhToan: number;
+  TrangThai: string;
+  HanThanhToan: string;
 }
 
 interface HopDongOption {
   HopDongID: number;
   MaHopDong?: string;
-  TenKH?: string;
 }
 
 const Invoices: React.FC = () => {
@@ -32,6 +33,8 @@ const Invoices: React.FC = () => {
     SoTien: "",
     NgayLap: "",
     PhanTramDaThanhToan: "0",
+    TrangThai: "Chưa thanh toán",
+    HanThanhToan: ""
   });
 
   const fetchInvoices = useCallback(async (searchTerm: string = "") => {
@@ -48,21 +51,16 @@ const Invoices: React.FC = () => {
       const data = await res.json();
       setInvoices(data);
     } catch (err: any) {
-      setError(err.message || "Không thể tải hóa đơn");
-      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }, []);
 
   const fetchHopDongs = useCallback(async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/contract/contract");
-      const data = await res.json();
-      setHopDongs(data);
-    } catch (err) {
-      console.error(err);
-    }
+    const res = await fetch("http://localhost:5000/api/contract/contract");
+    const data = await res.json();
+    setHopDongs(data);
   }, []);
 
   useEffect(() => {
@@ -74,7 +72,6 @@ const Invoices: React.FC = () => {
     const timeout = setTimeout(() => {
       fetchInvoices(search);
     }, 400);
-
     return () => clearTimeout(timeout);
   }, [search, fetchInvoices]);
 
@@ -84,13 +81,8 @@ const Invoices: React.FC = () => {
     hopDongs.map((h) => [h.HopDongID, h])
   );
 
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleOpenAdd = () => {
@@ -101,6 +93,8 @@ const Invoices: React.FC = () => {
       SoTien: "",
       NgayLap: "",
       PhanTramDaThanhToan: "0",
+      TrangThai: "Chưa thanh toán",
+      HanThanhToan: ""
     });
     setShowForm(true);
   };
@@ -108,105 +102,83 @@ const Invoices: React.FC = () => {
   const handleOpenEdit = (item: Invoice) => {
     setIsEdit(true);
     setSelected(item);
+
     setForm({
       HopDongID: item.HopDongID.toString(),
       SoTien: item.SoTien.toString(),
-      NgayLap: item.NgayLap ? item.NgayLap.slice(0, 10) : "",
+      NgayLap: item.NgayLap?.slice(0, 10) || "",
       PhanTramDaThanhToan: item.PhanTramDaThanhToan.toString(),
+      TrangThai: item.TrangThai || "",
+      HanThanhToan: item.HanThanhToan?.slice(0, 10) || ""
     });
+
     setShowForm(true);
   };
 
   const handleSubmit = async () => {
-    if (!form.HopDongID) {
-      alert("Vui lòng chọn hợp đồng");
-      return;
-    }
-
-    if (!form.SoTien || isNaN(Number(form.SoTien)) || Number(form.SoTien) <= 0) {
-      alert("Số tiền phải là số dương");
-      return;
-    }
-
-    if (!form.NgayLap) {
-      alert("Vui lòng chọn ngày lập");
-      return;
-    }
+    if (!form.HopDongID) return alert("Chọn hợp đồng");
+    if (!form.SoTien || Number(form.SoTien) <= 0) return alert("Số tiền sai");
 
     const percent = Number(form.PhanTramDaThanhToan);
-    if (isNaN(percent) || percent < 0 || percent > 100) {
-      alert("Phần trăm phải từ 0 đến 100");
-      return;
-    }
+
+    // 🔥 auto status
+    let status = "Chưa thanh toán";
+    if (percent === 100) status = "Đã thanh toán";
+    else if (percent > 0) status = "Thanh toán một phần";
 
     const body = {
       ...form,
       HopDongID: Number(form.HopDongID),
       SoTien: Number(form.SoTien),
       PhanTramDaThanhToan: percent,
-      NgayLap: form.NgayLap || null,
+      TrangThai: status
     };
 
     try {
-      if (isEdit && selected) {
-        await fetch(
-          `http://localhost:5000/api/invoice/invoice/${selected.HoaDonID}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          }
-        );
-      } else {
-        await fetch("http://localhost:5000/api/invoice/addinvoice", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      }
+      const url = isEdit && selected
+        ? `http://localhost:5000/api/invoice/invoice/${selected.HoaDonID}`
+        : "http://localhost:5000/api/invoice/addinvoice";
+
+      await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
 
       setShowForm(false);
       fetchInvoices(search);
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi lưu hóa đơn");
+    } catch {
+      alert("Lỗi lưu");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+    if (!window.confirm("Xóa?")) return;
 
-    try {
-      await fetch(`http://localhost:5000/api/invoice/invoice/${id}`, {
-        method: "DELETE",
-      });
+    await fetch(`http://localhost:5000/api/invoice/invoice/${id}`, {
+      method: "DELETE"
+    });
 
-      fetchInvoices(search);
-    } catch (err) {
-      console.error(err);
-      alert("Không thể xóa");
-    }
+    fetchInvoices(search);
   };
 
-  {loading && <div className="loading">Đang tải...</div>}
+  if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
       <div className="header">
-        <h2>🧾 Danh sách hóa đơn</h2>
+        <h2>🧾 Hóa đơn</h2>
 
         <div className="toolbar">
           <input
-            type="text"
-            placeholder="🔍 Tìm hóa đơn..."
+            placeholder="🔍 Tìm..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-
           <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm hóa đơn
+            + Thêm
           </button>
         </div>
       </div>
@@ -218,8 +190,10 @@ const Invoices: React.FC = () => {
             <th>Hợp đồng</th>
             <th>Số tiền</th>
             <th>Ngày lập</th>
-            <th>% thanh toán</th>
-            <th>Tác vụ</th>
+            <th>%</th>
+            <th>Trạng thái</th>
+            <th>Hạn</th>
+            <th></th>
           </tr>
         </thead>
 
@@ -230,37 +204,23 @@ const Invoices: React.FC = () => {
             return (
               <tr key={i.HoaDonID} onClick={() => handleOpenEdit(i)}>
                 <td>{formatID(i.HoaDonID)}</td>
+                <td>{hd?.MaHopDong || `HD${i.HopDongID}`}</td>
+                <td>{i.SoTien.toLocaleString()}</td>
+                <td>{new Date(i.NgayLap).toLocaleDateString()}</td>
+                <td>{i.PhanTramDaThanhToan}%</td>
                 <td>
-                  {hd
-                    ? hd.MaHopDong || `HD${hd.HopDongID}`
-                    : i.HopDongID}
+                  <span className={`badge ${i.TrangThai}`}>
+                    {i.TrangThai}
+                  </span>
                 </td>
-                <td>{i.SoTien.toLocaleString("vi-VN")}</td>
                 <td>
-                  {i.NgayLap
-                    ? new Date(i.NgayLap).toLocaleDateString("vi-VN")
+                  {i.HanThanhToan
+                    ? new Date(i.HanThanhToan).toLocaleDateString()
                     : "-"}
                 </td>
-                <td>{i.PhanTramDaThanhToan}%</td>
 
                 <td>
-                  <button
-                    className="btn-edit"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEdit(i);
-                    }}
-                  >
-                    Sửa
-                  </button>
-
-                  <button
-                    className="btn-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(i.HoaDonID);
-                    }}
-                  >
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(i.HoaDonID); }}>
                     Xóa
                   </button>
                 </td>
@@ -273,14 +233,9 @@ const Invoices: React.FC = () => {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h3>{isEdit ? "✏️ Sửa hóa đơn" : "➕ Thêm hóa đơn"}</h3>
+            <h3>{isEdit ? "Sửa" : "Thêm"} hóa đơn</h3>
 
-            <label>Hợp đồng *</label>
-            <select
-              name="HopDongID"
-              value={form.HopDongID}
-              onChange={handleChange}
-            >
+            <select name="HopDongID" value={form.HopDongID} onChange={handleChange}>
               <option value="">-- Chọn hợp đồng --</option>
               {hopDongs.map((hd) => (
                 <option key={hd.HopDongID} value={hd.HopDongID}>
@@ -289,23 +244,10 @@ const Invoices: React.FC = () => {
               ))}
             </select>
 
-            <label>Số tiền *</label>
-            <input
-              type="number"
-              name="SoTien"
-              value={form.SoTien}
-              onChange={handleChange}
-            />
+            <input name="SoTien" type="number" placeholder="Số tiền" value={form.SoTien} onChange={handleChange} />
+            <input type="date" name="NgayLap" value={form.NgayLap} onChange={handleChange} />
+            <input type="date" name="HanThanhToan" value={form.HanThanhToan} onChange={handleChange} />
 
-            <label>Ngày lập *</label>
-            <input
-              type="date"
-              name="NgayLap"
-              value={form.NgayLap}
-              onChange={handleChange}
-            />
-
-            <label>% thanh toán</label>
             <input
               type="number"
               name="PhanTramDaThanhToan"
@@ -316,16 +258,8 @@ const Invoices: React.FC = () => {
             />
 
             <div className="modal-actions">
-              <button className="btn-submit" onClick={handleSubmit}>
-                {isEdit ? "Cập nhật" : "Thêm"}
-              </button>
-
-              <button
-                className="btn-cancel"
-                onClick={() => setShowForm(false)}
-              >
-                Hủy
-              </button>
+              <button onClick={handleSubmit}>Lưu</button>
+              <button onClick={() => setShowForm(false)}>Hủy</button>
             </div>
           </div>
         </div>

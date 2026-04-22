@@ -7,6 +7,9 @@ interface History {
   HoatDong: string;
   ThoiGian: string;
   ViTri: string;
+  TrangThaiCu?: string;
+  TrangThaiMoi?: string;
+  NguoiCapNhat?: string;
 }
 
 interface ContainerOption {
@@ -18,7 +21,9 @@ const ContainerHistory: React.FC = () => {
   const [history, setHistory] = useState<History[]>([]);
   const [containers, setContainers] = useState<ContainerOption[]>([]);
   const [search, setSearch] = useState("");
+
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -28,163 +33,193 @@ const ContainerHistory: React.FC = () => {
     ContainerID: "",
     HoatDong: "",
     ThoiGian: "",
-    ViTri: ""
+    ViTri: "",
+    TrangThaiCu: "",
+    TrangThaiMoi: "",
+    NguoiCapNhat: ""
   });
-
 
   const fetchHistory = useCallback(async (searchTerm: string = "") => {
     try {
+      setLoading(true);
+
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/history/containerhistory/search?search=${encodeURIComponent(searchTerm)}`
         : "http://localhost:5000/api/history/containerhistory";
 
       const res = await fetch(url);
       if (!res.ok) throw new Error("Lỗi tải lịch sử");
+
       const data = await res.json();
-      const cleanData = data.filter(
-        (item: any) => item.LichSuID && item.ContainerID
-      );
-      cleanData.sort((a: History, b: History) => a.LichSuID - b.LichSuID);
-      
-      setHistory(cleanData);
-    } catch (err) {
-      console.error("Error fetching history:", err);
+
+      const clean = data
+        .filter((i: any) => i.LichSuID && i.ContainerID)
+        .sort((a: History, b: History) => a.LichSuID - b.LichSuID);
+
+      setHistory(clean);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }, []);
-
 
   const fetchContainers = useCallback(async () => {
     try {
       const res = await fetch("http://localhost:5000/api/container/container");
       const data = await res.json();
+
       const formatted = data.map((c: any) => ({
         ContainerID: c.ContainerID,
         formattedID: "CTN" + c.ContainerID.toString().padStart(3, "0")
       }));
+
       setContainers(formatted);
     } catch (err) {
-      console.error("Error fetching containers:", err);
+      console.error(err);
     }
   }, []);
+
+  useEffect(() => {
+    fetchHistory();
+    fetchContainers();
+  }, [fetchHistory, fetchContainers]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       fetchHistory(search);
     }, 400);
+
     return () => clearTimeout(timeout);
   }, [search, fetchHistory]);
 
-  useEffect(() => {
-    setLoading(true);
-    fetchContainers().finally(() => setLoading(false));
-  }, [fetchContainers]);
+  const formatID = (id?: number) =>
+    id ? "LS" + id.toString().padStart(3, "0") : "LS---";
 
-  const formatID = (id?: number) => {
-    if (!id) return "LS---";
-    return "LS" + id.toString().padStart(3, "0");
-  };
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleOpenAdd = () => {
     setIsEdit(false);
     setSelected(null);
-    setForm({ ContainerID: "", HoatDong: "", ThoiGian: "", ViTri: "" });
+
+    setForm({
+      ContainerID: "",
+      HoatDong: "",
+      ThoiGian: "",
+      ViTri: "",
+      TrangThaiCu: "",
+      TrangThaiMoi: "",
+      NguoiCapNhat: ""
+    });
+
     setShowForm(true);
   };
 
   const handleOpenEdit = (item: History) => {
     setIsEdit(true);
     setSelected(item);
+
     setForm({
       ContainerID: item.ContainerID.toString(),
       HoatDong: item.HoatDong,
-      ThoiGian: item.ThoiGian ? new Date(item.ThoiGian).toISOString().slice(0, 16) : "",
-      ViTri: item.ViTri
+      ThoiGian: item.ThoiGian
+        ? new Date(item.ThoiGian).toISOString().slice(0, 16)
+        : "",
+      ViTri: item.ViTri || "",
+      TrangThaiCu: item.TrangThaiCu || "",
+      TrangThaiMoi: item.TrangThaiMoi || "",
+      NguoiCapNhat: item.NguoiCapNhat || ""
     });
+
     setShowForm(true);
   };
 
   const handleSubmit = async () => {
     if (!form.ContainerID || !form.HoatDong || !form.ThoiGian) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc (*)");
+      alert("Vui lòng nhập đủ thông tin bắt buộc!");
       return;
     }
-  
+
     const body = {
       ...form,
-      ContainerID: Number(form.ContainerID),
+      ContainerID: Number(form.ContainerID)
     };
-  
+
     try {
-      const url = isEdit && selected
-        ? `http://localhost:5000/api/history/containerhistory/${selected.LichSuID}`
-        : "http://localhost:5000/api/history/addcontainerhistory";
-  
-      const res = await fetch(url, {
-        method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-  
-      if (res.ok) {
-        const data = await res.json();
-        console.log("DATA RETURN:", data);
-  
-        if (!data || !data.LichSuID || !data.ContainerID) {
-          console.warn("Data không hợp lệ, reload lại");
-          fetchHistory(search); 
-          setShowForm(false);
-          return;
-        }
-  
-        if (isEdit && selected) {
-          setHistory(prev =>
-            prev.map(item =>
-              item.LichSuID === selected.LichSuID ? data : item
-            )
-          );
-        } else {
-          setHistory(prev => [...prev, data]);
-        }
-  
-        setShowForm(false);
+      let res: Response;
+
+      if (isEdit && selected) {
+        res = await fetch(
+          `http://localhost:5000/api/history/containerhistory/${selected.LichSuID}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          }
+        );
       } else {
-        alert("Lỗi server khi lưu dữ liệu.");
+        res = await fetch(
+          "http://localhost:5000/api/history/addcontainerhistory",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          }
+        );
       }
-    } catch (err) {
-      console.error("Submit error:", err);
+
+      if (!res.ok) throw new Error("Lỗi server");
+
+      alert(isEdit ? "Cập nhật thành công!" : "Thêm thành công!");
+      setShowForm(false);
+      fetchHistory(search);
+    } catch (err: any) {
+      alert("Lỗi: " + err.message);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa bản ghi này?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+
     try {
-      const res = await fetch(`http://localhost:5000/api/history/containerhistory/${id}`, {
-        method: "DELETE"
-      });
-      if (res.ok) fetchHistory(search);
-    } catch (err) {
-      console.error("Delete error:", err);
+      const res = await fetch(
+        `http://localhost:5000/api/history/containerhistory/${id}`,
+        { method: "DELETE" }
+      );
+
+      if (!res.ok) throw new Error();
+
+      fetchHistory(search);
+    } catch {
+      alert("Lỗi khi xóa");
     }
   };
 
-  if (loading) return <div className="loading">Đang tải dữ liệu...</div>;
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
-    <div className="container-page">
+    <div>
       <div className="header">
         <h2>📜 Lịch sử Container</h2>
+
         <div className="toolbar">
           <input
             type="text"
-            placeholder="🔍 Tìm mã lịch sử hoặc ID container..."
+            placeholder="🔍 Tìm kiếm..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="btn-add" onClick={handleOpenAdd}>+ Thêm lịch sử</button>
+
+          <button className="btn-add" onClick={handleOpenAdd}>
+            + Thêm
+          </button>
         </div>
       </div>
 
@@ -196,43 +231,42 @@ const ContainerHistory: React.FC = () => {
             <th>Hành động</th>
             <th>Thời gian</th>
             <th>Vị trí</th>
+            <th>Trạng thái</th>
+            <th>Người cập nhật</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
+
         <tbody>
           {history.map((h) => (
-            <tr 
-              key={h.LichSuID} 
-              onClick={() => handleOpenEdit(h)} 
-              style={{ cursor: "pointer" }}
-            >
+            <tr key={h.LichSuID} onClick={() => handleOpenEdit(h)}>
               <td>{formatID(h.LichSuID)}</td>
-              <td>
-                {h.ContainerID
-                  ? "CTN" + h.ContainerID.toString().padStart(3, "0")
-                  : "CTN---"}
-              </td>              
-              <td>
-                <span className={`badge ${h.HoatDong.toLowerCase().replace(/\s/g, "-")}`}>
-                  {h.HoatDong}
-                </span>
-              </td>
-              <td>
-                {h.ThoiGian
-                  ? new Date(h.ThoiGian).toLocaleString("vi-VN")
-                  : "-"}
-              </td>
+              <td>{"CTN" + h.ContainerID.toString().padStart(3, "0")}</td>
+              <td>{h.HoatDong}</td>
+              <td>{new Date(h.ThoiGian).toLocaleString("vi-VN")}</td>
               <td>{h.ViTri || "-"}</td>
               <td>
-                <button 
-                  className="btn-edit" 
-                  onClick={(e) => { e.stopPropagation(); handleOpenEdit(h); }}
+                {h.TrangThaiCu} → {h.TrangThaiMoi}
+              </td>
+              <td>{h.NguoiCapNhat || "-"}</td>
+
+              <td>
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(h);
+                  }}
                 >
                   Sửa
                 </button>
-                <button 
-                  className="btn-delete" 
-                  onClick={(e) => { e.stopPropagation(); handleDelete(h.LichSuID); }}
+
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(h.LichSuID);
+                  }}
                 >
                   Xóa
                 </button>
@@ -245,47 +279,36 @@ const ContainerHistory: React.FC = () => {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h3>{isEdit ? "✏️ Cập nhật Lịch Sử" : "➕ Thêm Lịch Sử Mới"}</h3>
-            
-            <div className="form-group">
-              <label>Container *</label>
-              <select name="ContainerID" value={form.ContainerID} onChange={handleChange}>
-                <option value="">-- Chọn container --</option>
-                {containers.map((c) => (
-                  <option key={c.ContainerID} value={c.ContainerID}>{c.formattedID}</option>
-                ))}
-              </select>
-            </div>
+            <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} lịch sử</h3>
 
-            <div className="form-group">
-              <label>Hành động *</label>
-              <select name="HoatDong" value={form.HoatDong} onChange={handleChange}>
-                <option value="">-- Chọn hành động --</option>
-                <option value="Nhập kho">Nhập kho</option>
-                <option value="Xuất kho">Xuất kho</option>
-                <option value="Di chuyển">Di chuyển</option>
-                <option value="Bảo trì">Bảo trì</option>
-              </select>
-            </div>
+            <select name="ContainerID" value={form.ContainerID} onChange={handleChange}>
+              <option value="">-- Chọn container --</option>
+              {containers.map((c) => (
+                <option key={c.ContainerID} value={c.ContainerID}>
+                  {c.formattedID}
+                </option>
+              ))}
+            </select>
 
-            <div className="form-group">
-              <label>Thời gian *</label>
-              <input type="datetime-local" name="ThoiGian" value={form.ThoiGian} onChange={handleChange} />
-            </div>
+            <input name="HoatDong" value={form.HoatDong} onChange={handleChange} placeholder="Hành động" />
 
-            <div className="form-group">
-              <label>Vị trí</label>
-              <input 
-                name="ViTri" 
-                placeholder="VD: Cảng Cát Lái, Kho A1..." 
-                value={form.ViTri} 
-                onChange={handleChange} 
-              />
-            </div>
+            <input type="datetime-local" name="ThoiGian" value={form.ThoiGian} onChange={handleChange} />
+
+            <input name="ViTri" value={form.ViTri} onChange={handleChange} placeholder="Vị trí" />
+
+            <input name="TrangThaiCu" value={form.TrangThaiCu} onChange={handleChange} placeholder="Trạng thái cũ" />
+
+            <input name="TrangThaiMoi" value={form.TrangThaiMoi} onChange={handleChange} placeholder="Trạng thái mới" />
+
+            <input name="NguoiCapNhat" value={form.NguoiCapNhat} onChange={handleChange} placeholder="Người cập nhật" />
 
             <div className="modal-actions">
-              <button className="btn-submit" onClick={handleSubmit}>Lưu</button>
-              <button className="btn-cancel" onClick={() => setShowForm(false)}>Hủy</button>
+              <button className="btn-submit" onClick={handleSubmit}>
+                Lưu
+              </button>
+              <button className="btn-cancel" onClick={() => setShowForm(false)}>
+                Hủy
+              </button>
             </div>
           </div>
         </div>
