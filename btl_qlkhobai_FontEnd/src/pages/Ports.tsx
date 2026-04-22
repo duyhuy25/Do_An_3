@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
 import "./Pages.css";
 
 interface Port {
@@ -6,12 +6,17 @@ interface Port {
   TenCang: string;
   MaCang: string;
   ViTri: string;
+  QuocGia: string;
+  LoaiCang: string;
+  TrangThai: string;
 }
 
 const Ports: React.FC = () => {
-
   const [ports, setPorts] = useState<Port[]>([]);
   const [search, setSearch] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -20,27 +25,44 @@ const Ports: React.FC = () => {
   const [form, setForm] = useState({
     TenCang: "",
     MaCang: "",
-    ViTri: ""
+    ViTri: "",
+    QuocGia: "",
+    LoaiCang: "",
+    TrangThai: "Hoạt động"
   });
 
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:5000/api/port/port");
-    const data = await res.json();
-    setPorts(data);
-  };
+  const fetchData = useCallback(async (searchTerm: string = "") => {
+    try {
+      const url = searchTerm.trim()
+        ? `http://localhost:5000/api/port/port/search?search=${encodeURIComponent(searchTerm)}`
+        : "http://localhost:5000/api/port/port";
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Lỗi tải dữ liệu");
+
+      const data = await res.json();
+      setPorts(data);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const timeout = setTimeout(() => {
+      fetchData(search);
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [search, fetchData]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
   const formatID = (id: number) =>
     "CG" + id.toString().padStart(3, "0");
 
-  const filtered = ports.filter((p) =>
-    p.TenCang.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value
@@ -50,62 +72,75 @@ const Ports: React.FC = () => {
   const handleOpenAdd = () => {
     setIsEdit(false);
     setSelected(null);
-
     setForm({
       TenCang: "",
       MaCang: "",
-      ViTri: ""
+      ViTri: "",
+      QuocGia: "",
+      LoaiCang: "",
+      TrangThai: "Hoạt động"
     });
-
     setShowForm(true);
   };
 
   const handleOpenEdit = (item: Port) => {
     setIsEdit(true);
     setSelected(item);
-
     setForm({
       TenCang: item.TenCang,
       MaCang: item.MaCang,
-      ViTri: item.ViTri
+      ViTri: item.ViTri,
+      QuocGia: item.QuocGia || "",
+      LoaiCang: item.LoaiCang || "",
+      TrangThai: item.TrangThai || "Hoạt động"
     });
-
     setShowForm(true);
   };
 
   const handleSubmit = async () => {
-    const data = { ...form };
-
-    if (isEdit && selected) {
-      await fetch(
-        `http://localhost:5000/api/port/port/${selected.CangID}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        }
-      );
-    } else {
-      await fetch("http://localhost:5000/api/port/port", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    if (!form.TenCang) {
+      alert("Tên cảng là bắt buộc");
+      return;
     }
 
-    setShowForm(false);
-    fetchData();
+    try {
+      const url = isEdit && selected
+        ? `http://localhost:5000/api/port/port/${selected.CangID}`
+        : "http://localhost:5000/api/port/port";
+
+      const res = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
+
+      if (res.ok) {
+        setShowForm(false);
+        fetchData(search);
+      } else {
+        alert("Lỗi server");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
-    await fetch(`http://localhost:5000/api/port/port/${id}`, {
-      method: "DELETE"
-    });
+    try {
+      const res = await fetch(`http://localhost:5000/api/port/port/${id}`, {
+        method: "DELETE"
+      });
 
-    fetchData();
+      if (res.ok) fetchData(search);
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error">{error}</div>;
 
   return (
     <div>
@@ -132,19 +167,25 @@ const Ports: React.FC = () => {
           <tr>
             <th>ID</th>
             <th>Tên cảng</th>
-            <th>Mã cảng</th>
+            <th>Mã</th>
             <th>Địa chỉ</th>
+            <th>Quốc gia</th>
+            <th>Loại</th>
+            <th>Trạng thái</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
 
         <tbody>
-          {filtered.map((p) => (
+          {ports.map((p) => (
             <tr key={p.CangID} onClick={() => handleOpenEdit(p)}>
               <td>{formatID(p.CangID)}</td>
               <td>{p.TenCang}</td>
               <td>{p.MaCang}</td>
               <td>{p.ViTri}</td>
+              <td>{p.QuocGia}</td>
+              <td>{p.LoaiCang}</td>
+              <td>{p.TrangThai}</td>
 
               <td>
                 <button
@@ -177,9 +218,24 @@ const Ports: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} cảng</h3>
 
-            <input name="TenCang" placeholder="Tên cảng" value={form.TenCang} onChange={handleChange} />
+            <input name="TenCang" placeholder="Tên cảng *" value={form.TenCang} onChange={handleChange} />
             <input name="MaCang" placeholder="Mã cảng" value={form.MaCang} onChange={handleChange} />
             <input name="ViTri" placeholder="Địa chỉ" value={form.ViTri} onChange={handleChange} />
+
+            <input name="QuocGia" placeholder="Quốc gia" value={form.QuocGia} onChange={handleChange} />
+
+            <select name="LoaiCang" value={form.LoaiCang} onChange={handleChange}>
+              <option value="">-- Loại cảng --</option>
+              <option value="Biển">Biển</option>
+              <option value="Sông">Sông</option>
+              <option value="Cảng cạn">Cảng cạn</option>
+            </select>
+
+            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option value="Hoạt động">Hoạt động</option>
+              <option value="Tạm dừng">Tạm dừng</option>
+              <option value="Bảo trì">Bảo trì</option>
+            </select>
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>
