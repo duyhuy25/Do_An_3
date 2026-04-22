@@ -6,139 +6,119 @@ interface Props {
 }
 
 const Sidebar = ({ onSelect }: Props) => {
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const [openMenu,setOpenMenu] = useState<string | null>(null);
-
-  const toggleMenu = (menu:string)=>{
-    setOpenMenu(openMenu === menu ? null : menu);
-  }
+  const toggleMenu = (menu: string) => {
+    setOpenMenu((prev) => (prev === menu ? null : menu));
+  };
 
   return (
-
     <div className="sidebar">
       <h2>Danh mục</h2>
+
       <ul className="tree-menu">
         <li>
-          <div
-            className="menu-toggle"
-            onClick={()=>toggleMenu("container")}
-          >
+          <div className="menu-toggle" onClick={() => toggleMenu("container")}>
             📦 Quản lý Container
           </div>
-          {openMenu==="container" && (
+
+          {openMenu === "container" && (
             <ul className="sub-menu">
-              <li onClick={()=>onSelect("containers")}>
-                Danh sách Container
-              </li>
-              <li onClick={()=>onSelect("containerhistory")}>
-                Lịch sử Container
-              </li>
-              <li onClick={()=>onSelect("itemtypes")}>
-                Loại hàng
-              </li>
+              <li onClick={() => onSelect("containers")}>Danh sách Container</li>
+              <li onClick={() => onSelect("containerhistory")}>Lịch sử Container</li>
+              <li onClick={() => onSelect("itemtypes")}>Loại hàng</li>
             </ul>
           )}
         </li>
         <li>
-
-          <div
-            className="menu-toggle"
-            onClick={()=>toggleMenu("warehouse")}
-          >
+          <div className="menu-toggle" onClick={() => toggleMenu("warehouse")}>
             🏭 Quản lý Kho
           </div>
 
-          {openMenu==="warehouse" && (
+          {openMenu === "warehouse" && (
             <ul className="sub-menu">
-
-              <li onClick={()=>onSelect("warehouses")}>
-                Kho lưu trữ
-              </li>
+              <li onClick={() => onSelect("warehouses")}>Kho lưu trữ</li>
             </ul>
           )}
-
         </li>
         <li>
-          <div
-            className="menu-toggle"
-            onClick={()=>toggleMenu("transport")}
-          >
+          <div className="menu-toggle" onClick={() => toggleMenu("transport")}>
             🚚 Quản lý Vận chuyển
           </div>
-          {openMenu==="transport" && (
+
+          {openMenu === "transport" && (
             <ul className="sub-menu">
-              <li onClick={()=>onSelect("vehicles")}>
-                Phương tiện
-              </li>
-              <li onClick={()=>onSelect("trips")}>
-                Chuyến đi
-              </li>
-              <li onClick={()=>onSelect("ports")}>
-                Cảng
-              </li>
+              <li onClick={() => onSelect("vehicles")}>Phương tiện</li>
+              <li onClick={() => onSelect("trips")}>Chuyến đi</li>
+              <li onClick={() => onSelect("ports")}>Cảng</li>
             </ul>
           )}
         </li>
         <li>
-          <div
-            className="menu-toggle"
-            onClick={()=>toggleMenu("customer")}
-            >
+          <div className="menu-toggle" onClick={() => toggleMenu("customer")}>
             👥 Quản lý Khách hàng
           </div>
-          {openMenu==="customer" && (
+
+          {openMenu === "customer" && (
             <ul className="sub-menu">
-              <li onClick={()=>onSelect("customers")}>
-                Khách hàng
-              </li>
-              <li onClick={()=>onSelect("contracts")}>
-                Hợp đồng
-              </li>
+              <li onClick={() => onSelect("customers")}>Khách hàng</li>
+              <li onClick={() => onSelect("contracts")}>Hợp đồng</li>
             </ul>
           )}
         </li>
         <li>
-          <div
-            className="menu-toggle"
-            onClick={()=>toggleMenu("finance")}
-          >
+          <div className="menu-toggle" onClick={() => toggleMenu("finance")}>
             💰 Quản lý Tài chính
           </div>
-          {openMenu==="finance" && (
+
+          {openMenu === "finance" && (
             <ul className="sub-menu">
-              <li onClick={()=>onSelect("costs")}>
-                Chi phí
-              </li>
-              <li onClick={()=>onSelect("invoices")}>
-                Hóa đơn
-              </li>
+              <li onClick={() => onSelect("costs")}>Chi phí</li>
+              <li onClick={() => onSelect("invoices")}>Hóa đơn</li>
             </ul>
           )}
         </li>
         <li>
-          <div
-            className="menu-toggle"
-            onClick={()=>toggleMenu("users")}
-          >
+          <div className="menu-toggle" onClick={() => toggleMenu("users")}>
             👤 Người dùng
           </div>
-          {openMenu==="users" && (
+
+          {openMenu === "users" && (
             <ul className="sub-menu">
-              <li onClick={()=>onSelect("users")}>
-                Quản lý tài khoản
+              <li onClick={() => onSelect("users")}>Quản lý tài khoản</li>
+            </ul>
+          )}
+        </li>
+        <li>
+          <div className="menu-toggle" onClick={() => onSelect("dashboard")}>
+            📊 Báo cáo thống kê
+          </div>
+        </li>
+        <li>
+          <div className="menu-toggle" onClick={() => toggleMenu("advanced")}>
+            ⚙️ Mở rộng hệ thống
+          </div>
+
+          {openMenu === "advanced" && (
+            <ul className="sub-menu">
+              <li onClick={() => onSelect("assignmentcontainers")}>
+                Phân công Container
+              </li>
+              <li onClick={() => onSelect("auditlogs")}>
+                Nhật ký hệ thống
+              </li>
+              <li onClick={() => onSelect("gpscontainers")}>
+                Theo dõi GPS
+              </li>
+              <li onClick={() => onSelect("maintenance")}>
+                Bảo trì
+              </li>
+              <li onClick={() => onSelect("suppliers")}>
+                Nhà cung cấp
               </li>
             </ul>
           )}
-
-          </li>
-          <li>
-            <div
-              className="menu-toggle"
-              onClick={()=>onSelect("dashboard")}
-            >
-              📊 Báo cáo thống kê
-            </div>
-          </li>
+        </li>
       </ul>
     </div>
   );

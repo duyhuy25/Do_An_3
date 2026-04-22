@@ -7,6 +7,11 @@ import Containers from "./pages/Containers";
 import ContainerHistory from "./pages/Containerhistory";
 import ItemTypes from "./pages/ItemTypes";
 import Warehouses from "./pages/Warehouses";
+import AssignmentContainers from "./pages/AssignmentContainers";
+import AuditLogs from "./pages/AuditLog";
+import GPSContainers from "./pages/GPSContainers";
+import Suppliers from "./pages/Suppliers";
+import Maintenance from "./pages/Maintenance";
 
 import "./App.css";
 import Vehicles from "./pages/Vehicles";
@@ -53,6 +58,16 @@ function App() {
         return <Users/>
       case "dashboard":
         return <Dashboard/>
+      case "assignmentcontainers":
+        return <AssignmentContainers/>
+      case "auditlogs":
+        return <AuditLogs/>
+      case "gpscontainers":
+        return <GPSContainers/>
+      case "maintenance":
+        return <Maintenance/>
+      case "suppliers":
+        return <Suppliers/>
 
       default:
         return <h2>Chưa có dữ liệu</h2>;
