@@ -203,41 +203,55 @@ const Trips: React.FC = () => {
       </div>
 
       <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Mã</th>
-            <th>Cảng đi</th>
-            <th>Cảng đến</th>
-            <th>ETD</th>
-            <th>ETA</th>
-            <th>Xe</th>
-            <th>Tài xế</th>
-            <th>Trạng thái</th>
-            <th>Tác vụ</th>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Mã</th>
+          <th>Cảng đi</th>
+          <th>Cảng đến</th>
+          <th>ETD</th>
+          <th>ETA</th>
+          <th>Xe</th>
+          <th>Tài xế</th>
+          <th>SĐT</th>
+          <th>Quãng đường</th>
+          <th>Nhiên liệu</th>
+          <th>Trạng thái</th>
+          <th>Ghi chú</th>
+          <th>Tác vụ</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {trips.map(t => (
+          <tr key={t.ChuyenDiID} onClick={() => handleOpenEdit(t)}>
+            <td>{formatID(t.ChuyenDiID)}</td>
+            <td>{t.MaChuyen}</td>
+
+            <td>{cangs.find(c => c.CangID === t.CangDiID)?.TenCang}</td>
+            <td>{cangs.find(c => c.CangID === t.CangDenID)?.TenCang}</td>
+
+            <td>{t.NgayKhoiHanh && new Date(t.NgayKhoiHanh).toLocaleDateString()}</td>
+            <td>{t.NgayDuKienDen && new Date(t.NgayDuKienDen).toLocaleDateString()}</td>
+
+            <td>{vehicles.find(v => v.PhuongTienID === t.PhuongTienID)?.BienSo}</td>
+
+            <td>{t.TaiXe || "-"}</td>
+            <td>{t.SDTTaiXe || "-"}</td>
+
+            <td>{t.QuangDuong ? `${t.QuangDuong} km` : "-"}</td>
+            <td>{t.NhienLieuTieuThu ? `${t.NhienLieuTieuThu} L` : "-"}</td>
+
+            <td>{t.TrangThai}</td>
+            <td>{t.GhiChu || "-"}</td>
+
+            <td>
+              <button onClick={(e)=>{e.stopPropagation();handleOpenEdit(t);}}>Sửa</button>
+              <button onClick={(e)=>{e.stopPropagation();handleDelete(t.ChuyenDiID);}}>Xóa</button>
+            </td>
           </tr>
-        </thead>
-
-        <tbody>
-          {trips.map(t => (
-            <tr key={t.ChuyenDiID} onClick={() => handleOpenEdit(t)}>
-              <td>{formatID(t.ChuyenDiID)}</td>
-              <td>{t.MaChuyen}</td>
-              <td>{cangs.find(c => c.CangID === t.CangDiID)?.TenCang || t.CangDiID}</td>
-              <td>{cangs.find(c => c.CangID === t.CangDenID)?.TenCang || t.CangDenID}</td>
-              <td>{t.NgayKhoiHanh && new Date(t.NgayKhoiHanh).toLocaleDateString()}</td>
-              <td>{t.NgayDuKienDen && new Date(t.NgayDuKienDen).toLocaleDateString()}</td>
-              <td>{vehicles.find(v => v.PhuongTienID === t.PhuongTienID)?.BienSo || t.PhuongTienID}</td>
-              <td>{t.TaiXe}</td>
-              <td>{t.TrangThai}</td>
-
-              <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(t); }}>Sửa</button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(t.ChuyenDiID); }}>Xóa</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
+        ))}
+      </tbody>
       </table>
 
       {showForm && (
@@ -245,34 +259,49 @@ const Trips: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "Sửa" : "Thêm"} chuyến</h3>
 
-            <input name="MaChuyen" value={form.MaChuyen} onChange={handleChange} placeholder="Mã chuyến" />
+            <label>Mã chuyến *</label>
+            <input name="MaChuyen" value={form.MaChuyen} onChange={handleChange} />
 
+            <label>Cảng đi *</label>
             <select name="CangDiID" value={form.CangDiID} onChange={handleChange}>
-              <option value="">-- Cảng đi --</option>
+              <option value="">-- Chọn cảng đi --</option>
               {cangs.map(c => <option key={c.CangID} value={c.CangID}>{c.TenCang}</option>)}
             </select>
 
+            <label>Cảng đến *</label>
             <select name="CangDenID" value={form.CangDenID} onChange={handleChange}>
-              <option value="">-- Cảng đến --</option>
+              <option value="">-- Chọn cảng đến --</option>
               {cangs.map(c => <option key={c.CangID} value={c.CangID}>{c.TenCang}</option>)}
             </select>
 
+            <label>Ngày khởi hành (ETD)</label>
             <input type="date" name="NgayKhoiHanh" value={form.NgayKhoiHanh} onChange={handleChange} />
+
+            <label>Ngày dự kiến đến (ETA)</label>
             <input type="date" name="NgayDuKienDen" value={form.NgayDuKienDen} onChange={handleChange} />
 
+            <label>Phương tiện</label>
             <select name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange}>
               <option value="">-- Chọn xe --</option>
               {vehicles.map(v => <option key={v.PhuongTienID} value={v.PhuongTienID}>{v.BienSo}</option>)}
             </select>
 
-            <input name="TaiXe" value={form.TaiXe} onChange={handleChange} placeholder="Tài xế" />
-            <input name="SDTTaiXe" value={form.SDTTaiXe} onChange={handleChange} placeholder="SĐT tài xế" />
+            <label>Tài xế</label>
+            <input name="TaiXe" value={form.TaiXe} onChange={handleChange} />
 
-            <input name="QuangDuong" value={form.QuangDuong} onChange={handleChange} placeholder="Quãng đường (km)" />
-            <input name="NhienLieuTieuThu" value={form.NhienLieuTieuThu} onChange={handleChange} placeholder="Nhiên liệu (L)" />
+            <label>SĐT tài xế</label>
+            <input name="SDTTaiXe" value={form.SDTTaiXe} onChange={handleChange} />
 
-            <textarea name="GhiChu" value={form.GhiChu} onChange={handleChange} placeholder="Ghi chú" />
+            <label>Quãng đường (km)</label>
+            <input name="QuangDuong" value={form.QuangDuong} onChange={handleChange} />
 
+            <label>Nhiên liệu tiêu thụ (L)</label>
+            <input name="NhienLieuTieuThu" value={form.NhienLieuTieuThu} onChange={handleChange} />
+
+            <label>Ghi chú</label>
+            <textarea name="GhiChu" value={form.GhiChu} onChange={handleChange} />
+
+            <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option>Chuẩn bị</option>
               <option>Đang chạy</option>

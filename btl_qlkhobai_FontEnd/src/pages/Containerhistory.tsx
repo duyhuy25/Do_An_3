@@ -281,6 +281,7 @@ const ContainerHistory: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} lịch sử</h3>
 
+            <label>Container *</label>
             <select name="ContainerID" value={form.ContainerID} onChange={handleChange}>
               <option value="">-- Chọn container --</option>
               {containers.map((c) => (
@@ -290,17 +291,28 @@ const ContainerHistory: React.FC = () => {
               ))}
             </select>
 
-            <input name="HoatDong" value={form.HoatDong} onChange={handleChange} placeholder="Hành động" />
+            <label>Hoạt động *</label>
+            <input name="HoatDong" value={form.HoatDong} onChange={handleChange} />
 
-            <input type="datetime-local" name="ThoiGian" value={form.ThoiGian} onChange={handleChange} />
+            <label>Thời gian</label>
+            <input
+              type="datetime-local"
+              name="ThoiGian"
+              value={form.ThoiGian}
+              onChange={handleChange}
+            />
 
-            <input name="ViTri" value={form.ViTri} onChange={handleChange} placeholder="Vị trí" />
+            <label>Vị trí</label>
+            <input name="ViTri" value={form.ViTri} onChange={handleChange} />
 
-            <input name="TrangThaiCu" value={form.TrangThaiCu} onChange={handleChange} placeholder="Trạng thái cũ" />
+            <label>Trạng thái cũ</label>
+            <input name="TrangThaiCu" value={form.TrangThaiCu} onChange={handleChange} />
 
-            <input name="TrangThaiMoi" value={form.TrangThaiMoi} onChange={handleChange} placeholder="Trạng thái mới" />
+            <label>Trạng thái mới</label>
+            <input name="TrangThaiMoi" value={form.TrangThaiMoi} onChange={handleChange} />
 
-            <input name="NguoiCapNhat" value={form.NguoiCapNhat} onChange={handleChange} placeholder="Người cập nhật" />
+            <label>Người cập nhật</label>
+            <input name="NguoiCapNhat" value={form.NguoiCapNhat} onChange={handleChange} />
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>

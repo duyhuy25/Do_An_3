@@ -17,13 +17,18 @@ export const createVehicle = async (data: any) => {
     .input("BienSo", sql.NVarChar(20), data.BienSo)
     .input("HinhAnh", sql.NVarChar(255), data.HinhAnh)
     .input("TaiTrong", sql.Decimal(10,2), data.TaiTrong)
-    .input("TrangThai", sql.NVarChar(50), data.TrangThai || "Hoạt động")
+    .input("TrangThai", sql.NVarChar(50), data.TrangThai ?? "Hoạt động")
     .input("MoTa", sql.NVarChar(500), data.MoTa)
+    .input("NamSanXuat", sql.Int, data.NamSanXuat)
+    .input("ChuSoHuu", sql.NVarChar(100), data.ChuSoHuu)
+    .input("HanDangKiem", sql.Date, data.HanDangKiem)
+    .input("GPS", sql.NVarChar(100), data.GPS)
+
     .query(`
       INSERT INTO PhuongTien
-      (LoaiPhuongTien, BienSo, HinhAnh, TaiTrong, TrangThai, MoTa)
+      (LoaiPhuongTien, BienSo, HinhAnh, TaiTrong, TrangThai, MoTa, NamSanXuat, ChuSoHuu, HanDangKiem, GPS)
       VALUES
-      (@LoaiPhuongTien, @BienSo, @HinhAnh, @TaiTrong, @TrangThai, @MoTa)
+      (@LoaiPhuongTien, @BienSo, @HinhAnh, @TaiTrong, @TrangThai, @MoTa, @NamSanXuat, @ChuSoHuu, @HanDangKiem, @GPS)
     `);
 };
 
@@ -36,8 +41,13 @@ export const updateVehicleById = async (id: number, data: any) => {
     .input("BienSo", sql.NVarChar(20), data.BienSo)
     .input("HinhAnh", sql.NVarChar(255), data.HinhAnh)
     .input("TaiTrong", sql.Decimal(10,2), data.TaiTrong)
-    .input("TrangThai", sql.NVarChar(50), data.TrangThai)
+    .input("TrangThai", sql.NVarChar(50), data.TrangThai ?? "Hoạt động")
     .input("MoTa", sql.NVarChar(500), data.MoTa)
+    .input("NamSanXuat", sql.Int, data.NamSanXuat)
+    .input("ChuSoHuu", sql.NVarChar(100), data.ChuSoHuu)
+    .input("HanDangKiem", sql.Date, data.HanDangKiem)
+    .input("GPS", sql.NVarChar(100), data.GPS)
+
     .query(`
       UPDATE PhuongTien SET
         LoaiPhuongTien = @LoaiPhuongTien,
@@ -45,7 +55,11 @@ export const updateVehicleById = async (id: number, data: any) => {
         HinhAnh = @HinhAnh,
         TaiTrong = @TaiTrong,
         TrangThai = @TrangThai,
-        MoTa = @MoTa
+        MoTa = @MoTa,
+        NamSanXuat = @NamSanXuat,
+        ChuSoHuu = @ChuSoHuu,
+        HanDangKiem = @HanDangKiem,
+        GPS = @GPS
       WHERE PhuongTienID = @PhuongTienID
     `);
 };
@@ -71,7 +85,10 @@ export const searchVehicleByKeyword = async (keyword: string) => {
       WHERE 
         LoaiPhuongTien LIKE @search OR
         BienSo LIKE @search OR
-        TrangThai LIKE @search
+        TrangThai LIKE @search OR
+        ChuSoHuu LIKE @search OR
+        GPS LIKE @search OR
+        CAST(NamSanXuat AS NVARCHAR) LIKE @search
     `;
     request.input("search", sql.NVarChar(100), `%${keyword}%`);
   }

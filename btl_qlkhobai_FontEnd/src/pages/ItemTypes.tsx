@@ -201,21 +201,23 @@ const ItemTypes: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} loại hàng</h3>
 
+            <label>Tên loại hàng *</label>
             <input
               name="TenLoai"
-              placeholder="Tên loại hàng"
               value={form.TenLoai}
               onChange={handleChange}
             />
+
+            <label>Danh mục</label>
             <input
               name="DanhMuc"
-              placeholder="Danh mục"
               value={form.DanhMuc}
               onChange={handleChange}
             />
+
+            <label>Mô tả</label>
             <input
               name="MoTa"
-              placeholder="Mô tả"
               value={form.MoTa}
               onChange={handleChange}
             />

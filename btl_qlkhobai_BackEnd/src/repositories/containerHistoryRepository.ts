@@ -23,9 +23,18 @@ export const createHistory = async (data: any) => {
     .input("ThoiGian", sql.DateTime, data.ThoiGian || new Date())
     .input("HoatDong", sql.NVarChar, data.HoatDong)
     .input("ViTri", sql.NVarChar, data.ViTri)
+    .input("TrangThaiCu", sql.NVarChar, data.TrangThaiCu || null)
+    .input("TrangThaiMoi", sql.NVarChar, data.TrangThaiMoi || null)
+    .input("NguoiCapNhat", sql.NVarChar, data.NguoiCapNhat || null)
     .query(`
-      INSERT INTO LichSuContainer (ContainerID, ThoiGian, HoatDong, ViTri)
-      VALUES (@ContainerID, @ThoiGian, @HoatDong, @ViTri)
+      INSERT INTO LichSuContainer (
+        ContainerID, ThoiGian, HoatDong, ViTri,
+        TrangThaiCu, TrangThaiMoi, NguoiCapNhat
+      )
+      VALUES (
+        @ContainerID, @ThoiGian, @HoatDong, @ViTri,
+        @TrangThaiCu, @TrangThaiMoi, @NguoiCapNhat
+      )
     `);
 };
 
@@ -38,22 +47,21 @@ export const updateHistory = async (id: number, data: any) => {
     .input("ThoiGian", sql.DateTime, data.ThoiGian)
     .input("HoatDong", sql.NVarChar, data.HoatDong)
     .input("ViTri", sql.NVarChar, data.ViTri)
+    .input("TrangThaiCu", sql.NVarChar, data.TrangThaiCu || null)
+    .input("TrangThaiMoi", sql.NVarChar, data.TrangThaiMoi || null)
+    .input("NguoiCapNhat", sql.NVarChar, data.NguoiCapNhat || null)
     .query(`
       UPDATE LichSuContainer
-      SET ContainerID = @ContainerID,
-          ThoiGian = @ThoiGian,
-          HoatDong = @HoatDong,
-          ViTri = @ViTri
+      SET 
+        ContainerID = @ContainerID,
+        ThoiGian = @ThoiGian,
+        HoatDong = @HoatDong,
+        ViTri = @ViTri,
+        TrangThaiCu = @TrangThaiCu,
+        TrangThaiMoi = @TrangThaiMoi,
+        NguoiCapNhat = @NguoiCapNhat
       WHERE LichSuID = @LichSuID
     `);
-};
-
-export const deleteHistory = async (id: number) => {
-  const pool = await poolPromise;
-
-  await pool.request()
-    .input("LichSuID", sql.Int, id)
-    .query("DELETE FROM LichSuContainer WHERE LichSuID = @LichSuID");
 };
 
 export const searchHistory = async (searchTerm = "") => {
@@ -73,13 +81,17 @@ export const searchHistory = async (searchTerm = "") => {
       WHERE 
         ls.HoatDong LIKE @search
         OR ls.ViTri LIKE @search
+        OR ls.TrangThaiCu LIKE @search
+        OR ls.TrangThaiMoi LIKE @search
+        OR ls.NguoiCapNhat LIKE @search
         OR ('CTN' + RIGHT('000' + CAST(ls.ContainerID AS VARCHAR(3)), 3)) LIKE @search
         OR CONVERT(VARCHAR, ls.ThoiGian, 120) LIKE @search
     `;
+
     request.input("search", sql.NVarChar(100), `%${term}%`);
   }
 
-  query += " ORDER BY ls.ThoiGian ASC";
+  query += " ORDER BY ls.ThoiGian DESC";
 
   const result = await request.query(query);
   return result.recordset;

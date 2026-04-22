@@ -231,8 +231,8 @@ const Warehouses: React.FC = () => {
               <td>{w.NhanVienQuanLy}</td>
 
               <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(w); }}>Sửa</button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(w.KhoID); }}>Xóa</button>
+                <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(w); }}>Sửa</button>
+                <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(w.KhoID); }}>Xóa</button>
               </td>
             </tr>
           ))}
@@ -244,20 +244,33 @@ const Warehouses: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} kho</h3>
 
-            <input name="TenKho" value={form.TenKho} onChange={handleChange} placeholder="Tên kho *" />
-            <input name="SucChua" value={form.SucChua} onChange={handleChange} placeholder="Sức chứa" />
-            <input name="SoLuongContainer" value={form.SoLuongContainer} onChange={handleChange} placeholder="Số container" />
-            <input name="DienTich" value={form.DienTich} onChange={handleChange} placeholder="Diện tích (m²)" />
-            <input name="DiaChi" value={form.DiaChi} onChange={handleChange} placeholder="Địa chỉ" />
-            <input name="NhanVienQuanLy" value={form.NhanVienQuanLy} onChange={handleChange} placeholder="Quản lý" />
+            <label>Tên kho *</label>
+            <input name="TenKho" value={form.TenKho} onChange={handleChange} />
 
+            <label>Sức chứa (container)</label>
+            <input name="SucChua" value={form.SucChua} onChange={handleChange} />
+
+            <label>Số lượng container hiện có</label>
+            <input name="SoLuongContainer" value={form.SoLuongContainer} onChange={handleChange} />
+
+            <label>Diện tích (m²)</label>
+            <input name="DienTich" value={form.DienTich} onChange={handleChange} />
+
+            <label>Địa chỉ</label>
+            <input name="DiaChi" value={form.DiaChi} onChange={handleChange} />
+
+            <label>Nhân viên quản lý</label>
+            <input name="NhanVienQuanLy" value={form.NhanVienQuanLy} onChange={handleChange} />
+
+            <label>Loại kho</label>
             <select name="LoaiKho" value={form.LoaiKho} onChange={handleChange}>
-              <option value="">-- Loại kho --</option>
+              <option value="">-- Chọn loại kho --</option>
               <option value="Thường">Thường</option>
               <option value="Lạnh">Kho lạnh</option>
               <option value="Nguy hiểm">Hàng nguy hiểm</option>
             </select>
 
+            <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option value="Hoạt động">Hoạt động</option>
               <option value="Tạm dừng">Tạm dừng</option>
@@ -265,8 +278,13 @@ const Warehouses: React.FC = () => {
             </select>
 
             <div className="modal-actions">
-              <button onClick={handleSubmit}>{isEdit ? "Cập nhật" : "Thêm"}</button>
-              <button onClick={() => setShowForm(false)}>Hủy</button>
+              <button className="btn-submit" onClick={handleSubmit}>
+                {isEdit ? "Cập nhật" : "Thêm"}
+              </button>
+
+              <button className="btn-cancel" onClick={() => setShowForm(false)}>
+                Hủy
+              </button>
             </div>
           </div>
         </div>

@@ -218,19 +218,27 @@ const Ports: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} cảng</h3>
 
-            <input name="TenCang" placeholder="Tên cảng *" value={form.TenCang} onChange={handleChange} />
-            <input name="MaCang" placeholder="Mã cảng" value={form.MaCang} onChange={handleChange} />
-            <input name="ViTri" placeholder="Địa chỉ" value={form.ViTri} onChange={handleChange} />
+            <label>Tên cảng *</label>
+            <input name="TenCang" value={form.TenCang} onChange={handleChange} />
 
-            <input name="QuocGia" placeholder="Quốc gia" value={form.QuocGia} onChange={handleChange} />
+            <label>Mã cảng</label>
+            <input name="MaCang" value={form.MaCang} onChange={handleChange} />
 
+            <label>Địa chỉ</label>
+            <input name="ViTri" value={form.ViTri} onChange={handleChange} />
+
+            <label>Quốc gia</label>
+            <input name="QuocGia" value={form.QuocGia} onChange={handleChange} />
+
+            <label>Loại cảng</label>
             <select name="LoaiCang" value={form.LoaiCang} onChange={handleChange}>
-              <option value="">-- Loại cảng --</option>
+              <option value="">-- Chọn loại cảng --</option>
               <option value="Biển">Biển</option>
               <option value="Sông">Sông</option>
               <option value="Cảng cạn">Cảng cạn</option>
             </select>
 
+            <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option value="Hoạt động">Hoạt động</option>
               <option value="Tạm dừng">Tạm dừng</option>

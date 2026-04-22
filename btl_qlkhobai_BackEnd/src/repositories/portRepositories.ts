@@ -22,9 +22,12 @@ export const createPort = async (data: any) => {
     .input("TenCang", data.TenCang)
     .input("MaCang", data.MaCang)
     .input("ViTri", data.ViTri)
+    .input("QuocGia", data.QuocGia)
+    .input("LoaiCang", data.LoaiCang)
+    .input("TrangThai", data.TrangThai)
     .query(`
-      INSERT INTO Cang (TenCang, MaCang, ViTri)
-      VALUES (@TenCang, @MaCang, @ViTri)
+      INSERT INTO Cang (TenCang, MaCang, ViTri, QuocGia, LoaiCang, TrangThai)
+      VALUES (@TenCang, @MaCang, @ViTri, @QuocGia, @LoaiCang, @TrangThai)
     `);
 };
 
@@ -36,11 +39,17 @@ export const updatePortById = async (id: number, data: any) => {
     .input("TenCang", data.TenCang)
     .input("MaCang", data.MaCang)
     .input("ViTri", data.ViTri)
+    .input("QuocGia", data.QuocGia)
+    .input("LoaiCang", data.LoaiCang)
+    .input("TrangThai", data.TrangThai)
     .query(`
       UPDATE Cang SET
         TenCang = @TenCang,
         MaCang = @MaCang,
-        ViTri = @ViTri
+        ViTri = @ViTri,
+        QuocGia = @QuocGia,
+        LoaiCang = @LoaiCang,
+        TrangThai = @TrangThai
       WHERE CangID = @CangID
     `);
 };
@@ -73,11 +82,14 @@ export const searchPortByKeyword = async (searchTerm = "") => {
         OR c.TenCang LIKE @search
         OR c.MaCang LIKE @search
         OR c.ViTri LIKE @search
+        OR c.QuocGia LIKE @search
+        OR c.LoaiCang LIKE @search
+        OR c.TrangThai LIKE @search
     `;
     request.input("search", sql.NVarChar(100), `%${term}%`);
   }
 
-  query += " ORDER BY c.CangID DESC";
+  query += " ORDER BY c.CangID ASC";
 
   const result = await request.query(query);
   return result.recordset;

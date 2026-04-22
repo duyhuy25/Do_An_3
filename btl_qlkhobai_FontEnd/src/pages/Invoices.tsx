@@ -235,6 +235,7 @@ const Invoices: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "Sửa" : "Thêm"} hóa đơn</h3>
 
+            <label>Hợp đồng *</label>
             <select name="HopDongID" value={form.HopDongID} onChange={handleChange}>
               <option value="">-- Chọn hợp đồng --</option>
               {hopDongs.map((hd) => (
@@ -244,10 +245,31 @@ const Invoices: React.FC = () => {
               ))}
             </select>
 
-            <input name="SoTien" type="number" placeholder="Số tiền" value={form.SoTien} onChange={handleChange} />
-            <input type="date" name="NgayLap" value={form.NgayLap} onChange={handleChange} />
-            <input type="date" name="HanThanhToan" value={form.HanThanhToan} onChange={handleChange} />
+            <label>Số tiền (VNĐ)</label>
+            <input
+              name="SoTien"
+              type="number"
+              value={form.SoTien}
+              onChange={handleChange}
+            />
 
+            <label>Ngày lập</label>
+            <input
+              type="date"
+              name="NgayLap"
+              value={form.NgayLap}
+              onChange={handleChange}
+            />
+
+            <label>Hạn thanh toán</label>
+            <input
+              type="date"
+              name="HanThanhToan"
+              value={form.HanThanhToan}
+              onChange={handleChange}
+            />
+
+            <label>Đã thanh toán (%)</label>
             <input
               type="number"
               name="PhanTramDaThanhToan"

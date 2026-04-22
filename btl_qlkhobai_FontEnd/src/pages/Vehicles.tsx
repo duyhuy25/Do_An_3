@@ -221,28 +221,42 @@ const Vehicles: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "Sửa" : "Thêm"} phương tiện</h3>
 
-            <input name="LoaiPhuongTien" value={form.LoaiPhuongTien} onChange={handleChange} placeholder="Loại xe" />
-            <input name="BienSo" value={form.BienSo} onChange={handleChange} placeholder="Biển số" />
+            <label>Loại phương tiện</label>
+            <input name="LoaiPhuongTien" value={form.LoaiPhuongTien} onChange={handleChange} />
 
-            <input name="HinhAnh" value={form.HinhAnh} onChange={handleChange} placeholder="Link ảnh" />
-            {form.HinhAnh && <img src={form.HinhAnh} width="80" />}
+            <label>Biển số *</label>
+            <input name="BienSo" value={form.BienSo} onChange={handleChange} />
 
-            <input name="TaiTrong" value={form.TaiTrong} onChange={handleChange} placeholder="Tải trọng" />
-            <input name="NamSanXuat" value={form.NamSanXuat} onChange={handleChange} placeholder="Năm SX" />
+            <label>Link hình ảnh</label>
+            <input name="HinhAnh" value={form.HinhAnh} onChange={handleChange} />
+            {form.HinhAnh && (
+              <img src={form.HinhAnh} width="80" style={{ marginBottom: "10px", borderRadius: "6px" }} />
+            )}
 
-            <input name="ChuSoHuu" value={form.ChuSoHuu} onChange={handleChange} placeholder="Chủ sở hữu" />
+            <label>Tải trọng (tấn)</label>
+            <input name="TaiTrong" value={form.TaiTrong} onChange={handleChange} />
 
+            <label>Năm sản xuất</label>
+            <input name="NamSanXuat" value={form.NamSanXuat} onChange={handleChange} />
+
+            <label>Chủ sở hữu</label>
+            <input name="ChuSoHuu" value={form.ChuSoHuu} onChange={handleChange} />
+
+            <label>Hạn đăng kiểm</label>
             <input type="date" name="HanDangKiem" value={form.HanDangKiem} onChange={handleChange} />
 
-            <input name="GPS" value={form.GPS} onChange={handleChange} placeholder="GPS (lat,lng)" />
+            <label>GPS (lat, lng)</label>
+            <input name="GPS" value={form.GPS} onChange={handleChange} />
 
+            <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option>Sẵn sàng</option>
               <option>Đang chạy</option>
               <option>Bảo trì</option>
             </select>
 
-            <input name="MoTa" value={form.MoTa} onChange={handleChange} placeholder="Mô tả" />
+            <label>Mô tả</label>
+            <input name="MoTa" value={form.MoTa} onChange={handleChange} />
 
             <div className="modal-actions">
               <button onClick={handleSubmit}>Lưu</button>

@@ -32,14 +32,20 @@ export const createTrip = async (data: any) => {
     .input("NgayDuKienDen", data.NgayDuKienDen)
     .input("PhuongTienID", data.PhuongTienID)
     .input("TrangThai", data.TrangThai)
+    .input("TaiXe", data.TaiXe)
+    .input("SDTTaiXe", data.SDTTaiXe)
+    .input("NhienLieuTieuThu", data.NhienLieuTieuThu)
+    .input("QuangDuong", data.QuangDuong)
+    .input("GhiChu", data.GhiChu)
     .query(`
       INSERT INTO ChuyenDi 
-      (MaChuyen, CangDiID, CangDenID, NgayKhoiHanh, NgayDuKienDen, PhuongTienID, TrangThai)
+      (MaChuyen, CangDiID, CangDenID, NgayKhoiHanh, NgayDuKienDen, PhuongTienID, TrangThai,
+       TaiXe, SDTTaiXe, NhienLieuTieuThu, QuangDuong, GhiChu)
       VALUES 
-      (@MaChuyen, @CangDiID, @CangDenID, @NgayKhoiHanh, @NgayDuKienDen, @PhuongTienID, @TrangThai)
+      (@MaChuyen, @CangDiID, @CangDenID, @NgayKhoiHanh, @NgayDuKienDen, @PhuongTienID, @TrangThai,
+       @TaiXe, @SDTTaiXe, @NhienLieuTieuThu, @QuangDuong, @GhiChu)
     `);
 };
-
 export const updateTripById = async (id: number, data: any) => {
   const pool = await poolPromise;
 
@@ -52,6 +58,11 @@ export const updateTripById = async (id: number, data: any) => {
     .input("NgayDuKienDen", data.NgayDuKienDen)
     .input("PhuongTienID", data.PhuongTienID)
     .input("TrangThai", data.TrangThai)
+    .input("TaiXe", data.TaiXe)
+    .input("SDTTaiXe", data.SDTTaiXe)
+    .input("NhienLieuTieuThu", data.NhienLieuTieuThu)
+    .input("QuangDuong", data.QuangDuong)
+    .input("GhiChu", data.GhiChu)
     .query(`
       UPDATE ChuyenDi SET
         MaChuyen = @MaChuyen,
@@ -60,7 +71,12 @@ export const updateTripById = async (id: number, data: any) => {
         NgayKhoiHanh = @NgayKhoiHanh,
         NgayDuKienDen = @NgayDuKienDen,
         PhuongTienID = @PhuongTienID,
-        TrangThai = @TrangThai
+        TrangThai = @TrangThai,
+        TaiXe = @TaiXe,
+        SDTTaiXe = @SDTTaiXe,
+        NhienLieuTieuThu = @NhienLieuTieuThu,
+        QuangDuong = @QuangDuong,
+        GhiChu = @GhiChu
       WHERE ChuyenDiID = @ChuyenDiID
     `);
 };
@@ -100,6 +116,9 @@ export const searchTripByKeyword = async (searchTerm = "") => {
         OR c2.TenCang LIKE @search
         OR pt.BienSo LIKE @search
         OR cd.TrangThai LIKE @search
+        OR cd.TaiXe LIKE @search
+        OR cd.SDTTaiXe LIKE @search
+        OR cd.GhiChu LIKE @search
     `;
     request.input("search", sql.NVarChar(100), `%${term}%`);
   }

@@ -132,7 +132,7 @@ const Users: React.FC = () => {
       HoTen: u.HoTen || "",
       Email: u.Email || "",
       TrangThai: u.TrangThai || "Hoạt động",
-      RoleID: u.RoleID.toString(),
+      RoleID: u.RoleID ? u.RoleID.toString() : "1",
 
       SDT: u.SDT || "",
       DiaChi: u.DiaChi || "",
@@ -277,28 +277,57 @@ const Users: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "Sửa" : "Thêm"} user</h3>
 
-            <input name="Username" disabled={isEdit} value={form.Username} onChange={handleChange} placeholder="Username" />
+            <label>Username</label>
+            <input
+              name="Username"
+              disabled={isEdit}
+              value={form.Username}
+              onChange={handleChange}
+              placeholder="Username"
+            />
 
-            <input type={showPassword ? "text" : "password"} name="PasswordHash" value={form.PasswordHash} onChange={handleChange} placeholder="Mật khẩu" />
-            <button onClick={() => setShowPassword(!showPassword)}>👁</button>
+            <label>Mật khẩu</label>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                name="PasswordHash"
+                value={form.PasswordHash}
+                onChange={handleChange}
+                placeholder="Mật khẩu"
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}>
+                👁
+              </button>
+            </div>
 
-            <input name="HoTen" value={form.HoTen} onChange={handleChange} placeholder="Họ tên" />
-            <input name="Email" value={form.Email} onChange={handleChange} placeholder="Email" />
-            <input name="SDT" value={form.SDT} onChange={handleChange} placeholder="SĐT" />
-            <input name="DiaChi" value={form.DiaChi} onChange={handleChange} placeholder="Địa chỉ" />
+            <label>Họ tên</label>
+            <input name="HoTen" value={form.HoTen} onChange={handleChange} />
 
+            <label>Email</label>
+            <input name="Email" value={form.Email} onChange={handleChange} />
+
+            <label>Số điện thoại</label>
+            <input name="SDT" value={form.SDT} onChange={handleChange} />
+
+            <label>Địa chỉ</label>
+            <input name="DiaChi" value={form.DiaChi} onChange={handleChange} />
+
+            <label>Ngày sinh</label>
             <input type="date" name="NgaySinh" value={form.NgaySinh} onChange={handleChange} />
 
+            <label>Giới tính</label>
             <select name="GioiTinh" value={form.GioiTinh} onChange={handleChange}>
               <option>Nam</option>
               <option>Nữ</option>
               <option>Khác</option>
             </select>
 
+            <label>Avatar</label>
             <input name="Avatar" value={form.Avatar} onChange={handleChange} placeholder="Link avatar" />
 
             {form.Avatar && <img src={form.Avatar} width="60" />}
 
+            <label>Vai trò</label>
             <select name="RoleID" value={form.RoleID} onChange={handleChange}>
               {roles.map(r => (
                 <option key={r.RoleID} value={r.RoleID}>
@@ -307,6 +336,7 @@ const Users: React.FC = () => {
               ))}
             </select>
 
+            <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option>Hoạt động</option>
               <option>Khóa</option>

@@ -236,33 +236,65 @@ const Containers: React.FC = () => {
       </div>
 
       <table>
-        <thead>
+      <thead>
           <tr>
             <th>ID</th>
             <th>Mã</th>
-            <th>Loại</th>
-            <th>Kg</th>
+            <th>Loại hàng</th>
+            <th>Trọng lượng</th>
+            <th>Kích thước</th>
+            <th>Loại container</th>
             <th>Trạng thái</th>
             <th>Kho</th>
-            <th>PT</th>
-            <th>Action</th>
+            <th>Phương tiện</th>
+            <th>Hợp đồng</th>
+            <th>Ngày đóng</th>
+            <th>Ngày mở</th>
+            <th>Tình trạng vỏ</th>
+            <th>Nhiệt độ</th>
+            <th>Độ ẩm</th>
+            <th>Tác vụ</th>
           </tr>
         </thead>
 
         <tbody>
-          {containers.map(c => (
+          {containers.map((c) => (
             <tr key={c.ContainerID} onClick={() => handleOpenEdit(c)}>
               <td>{formatID(c.ContainerID)}</td>
               <td>{c.MaContainer || "-"}</td>
-              <td>{c.LoaiContainer || "-"}</td>
-              <td>{c.TrongLuong}</td>
-              <td>{c.TrangThai}</td>
-              <td>{khos.find(k => k.KhoID === c.KhoID)?.TenKho || "-"}</td>
-              <td>{phuongTiens.find(p => p.PhuongTienID === c.PhuongTienID)?.BienSo || "-"}</td>
 
               <td>
-                <button onClick={(e)=>{e.stopPropagation();handleOpenEdit(c)}}>Sửa</button>
-                <button onClick={(e)=>{e.stopPropagation();handleDelete(c.ContainerID)}}>Xóa</button>
+                {loaiHangs.find(l => l.LoaiHangID === c.LoaiHangID)?.TenLoai}
+              </td>
+
+              <td>{c.TrongLuong?.toLocaleString("vi-VN")}</td>
+
+              <td>{c.KichThuoc || "-"}</td>
+              <td>{c.LoaiContainer || "-"}</td>
+
+              <td>{c.TrangThai}</td>
+
+              <td>{khos.find(k => k.KhoID === c.KhoID)?.TenKho || "-"}</td>
+
+              <td>
+                {phuongTiens.find(p => p.PhuongTienID === c.PhuongTienID)?.BienSo || "-"}
+              </td>
+
+              <td>
+                {hopDongs.find(h => h.HopDongID === c.HopDongID)?.MaHopDong || c.HopDongID}
+              </td>
+
+              <td>{c.NgayDongHang ? c.NgayDongHang.slice(0,10) : "-"}</td>
+              <td>{c.NgayMoHang ? c.NgayMoHang.slice(0,10) : "-"}</td>
+
+              <td>{c.TinhTrangVo || "-"}</td>
+
+              <td>{c.NhietDoBaoQuan ?? "-"}</td>
+              <td>{c.DoAm ?? "-"}</td>
+
+              <td>
+                <button className="btn-edit" onClick={(e)=>{e.stopPropagation();handleOpenEdit(c);}}>Sửa</button>
+                <button className="btn-delete" onClick={(e)=>{e.stopPropagation();handleDelete(c.ContainerID);}}>Xóa</button>
               </td>
             </tr>
           ))}
@@ -275,28 +307,116 @@ const Containers: React.FC = () => {
 
             <h3>{isEdit ? "Sửa" : "Thêm"} Container</h3>
 
-            <input name="MaContainer" value={form.MaContainer} onChange={handleChange} placeholder="Mã container" />
-            <input name="LoaiContainer" value={form.LoaiContainer} onChange={handleChange} placeholder="Loại container" />
-            <input name="KichThuoc" value={form.KichThuoc} onChange={handleChange} placeholder="Kích thước" />
+            <div className="form-group">
+              <label>Loại hàng *</label>
+              <select name="LoaiHangID" value={form.LoaiHangID} onChange={handleChange}>
+                <option value="">-- Chọn loại hàng --</option>
+                {loaiHangs.map(l => (
+                  <option key={l.LoaiHangID} value={l.LoaiHangID}>
+                    {l.TenLoai}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <input type="number" name="TrongLuong" value={form.TrongLuong} onChange={handleChange} placeholder="Trọng lượng" />
+            <div className="form-group">
+              <label>Hợp đồng *</label>
+              <select name="HopDongID" value={form.HopDongID} onChange={handleChange}>
+                <option value="">-- Chọn hợp đồng --</option>
+                {hopDongs.map(h => (
+                  <option key={h.HopDongID} value={h.HopDongID}>
+                    {h.MaHopDong || h.HopDongID}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <input type="date" name="NgayDongHang" value={form.NgayDongHang} onChange={handleChange} />
-            <input type="date" name="NgayMoHang" value={form.NgayMoHang} onChange={handleChange} />
+            <div className="form-group">
+              <label>Kho</label>
+              <select name="KhoID" value={form.KhoID} onChange={handleChange}>
+                <option value="">-- Chọn kho --</option>
+                {khos.map(k => (
+                  <option key={k.KhoID} value={k.KhoID}>
+                    {k.TenKho}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <input name="TinhTrangVo" value={form.TinhTrangVo} onChange={handleChange} placeholder="Tình trạng vỏ" />
-            <input type="number" name="NhietDoBaoQuan" value={form.NhietDoBaoQuan} onChange={handleChange} placeholder="Nhiệt độ" />
-            <input type="number" name="DoAm" value={form.DoAm} onChange={handleChange} placeholder="Độ ẩm" />
+            <div className="form-group">
+              <label>Phương tiện</label>
+              <select name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange}>
+                <option value="">-- Chọn phương tiện --</option>
+                {phuongTiens.map(p => (
+                  <option key={p.PhuongTienID} value={p.PhuongTienID}>
+                    {p.BienSo}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Trạng thái</label>
+              <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+                <option value="Rỗng">Rỗng</option>
+                <option value="Đang sử dụng">Đang sử dụng</option>
+                <option value="Đang vận chuyển">Đang vận chuyển</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Mã container</label>
+              <input name="MaContainer" value={form.MaContainer} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Loại container</label>
+              <input name="LoaiContainer" value={form.LoaiContainer} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Kích thước</label>
+              <input name="KichThuoc" value={form.KichThuoc} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Trọng lượng *</label>
+              <input type="number" name="TrongLuong" value={form.TrongLuong} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Ngày đóng hàng</label>
+              <input type="date" name="NgayDongHang" value={form.NgayDongHang} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Ngày mở hàng</label>
+              <input type="date" name="NgayMoHang" value={form.NgayMoHang} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Tình trạng vỏ</label>
+              <input name="TinhTrangVo" value={form.TinhTrangVo} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Nhiệt độ bảo quản (°C)</label>
+              <input type="number" name="NhietDoBaoQuan" value={form.NhietDoBaoQuan} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Độ ẩm (%)</label>
+              <input type="number" name="DoAm" value={form.DoAm} onChange={handleChange} />
+            </div>
 
             <div className="modal-actions">
-              <button onClick={handleSubmit}>Lưu</button>
-              <button onClick={()=>setShowForm(false)}>Hủy</button>
+              <button className="btn-submit" onClick={handleSubmit}>Lưu</button>
+              <button className="btn-cancel" onClick={()=>setShowForm(false)}>Hủy</button>
             </div>
 
           </div>
         </div>
       )}
-
     </div>
   );
 };

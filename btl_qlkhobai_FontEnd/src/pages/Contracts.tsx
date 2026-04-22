@@ -132,7 +132,6 @@ const Contracts: React.FC = () => {
     setShowForm(true);
   };
 
-  // ================= SUBMIT =================
   const handleSubmit = async () => {
     if (!form.KhachHangID || !form.NgayKy) {
       alert("Thiếu thông tin bắt buộc");
@@ -181,7 +180,6 @@ const Contracts: React.FC = () => {
   if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">{error}</div>;
 
-  // ================= UI =================
   return (
     <div>
       <div className="header">
@@ -198,33 +196,57 @@ const Contracts: React.FC = () => {
       </div>
 
       <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Mã HĐ</th>
-            <th>Khách hàng</th>
-            <th>Ngày ký</th>
-            <th>Giá trị</th>
-            <th>Trạng thái</th>
-            <th>File</th>
-            <th>Tác vụ</th>
-          </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Mã HĐ</th>
+          <th>Khách hàng</th>
+          <th>Ngày ký</th>
+          <th>Hết hạn</th>
+          <th>Loại DV</th>
+          <th>Giá trị</th>
+          <th>Trạng thái</th>
+          <th>File</th>
+          <th>Mô tả</th>
+          <th>Tác vụ</th>
+        </tr>
+      </thead>
 
-        <tbody>
+      <tbody>
           {contracts.map(c => (
             <tr key={c.HopDongID} onClick={() => handleOpenEdit(c)}>
               <td>{formatID(c.HopDongID)}</td>
               <td>{c.MaHopDong}</td>
-              <td>{c.KhachHangID}</td>
-              <td>{new Date(c.NgayKy).toLocaleDateString("vi-VN")}</td>
-              <td>{c.GiaTri.toLocaleString()}</td>
-              <td>{c.TrangThai}</td>
-              <td>{c.FileHopDong ? "📎" : "-"}</td>
 
               <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(c); }}>Sửa</button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(c.HopDongID); }}>Xóa</button>
+                {khachHangs.find(k => k.KhachHangID === c.KhachHangID)?.TenKH || c.KhachHangID}
+              </td>
+
+              <td>{new Date(c.NgayKy).toLocaleDateString("vi-VN")}</td>
+
+              <td>
+                {c.NgayHetHan
+                  ? new Date(c.NgayHetHan).toLocaleDateString("vi-VN")
+                  : "-"}
+              </td>
+
+              <td>{c.LoaiDichVu || "-"}</td>
+
+              <td>{c.GiaTri.toLocaleString("vi-VN")} VND</td>
+
+              <td>{c.TrangThai}</td>
+
+              <td>
+                {c.FileHopDong
+                  ? <a href={c.FileHopDong} target="_blank">📎</a>
+                  : "-"}
+              </td>
+
+              <td>{c.MoTa || "-"}</td>
+
+              <td>
+                <button onClick={(e)=>{e.stopPropagation();handleOpenEdit(c);}}>Sửa</button>
+                <button onClick={(e)=>{e.stopPropagation();handleDelete(c.HopDongID);}}>Xóa</button>
               </td>
             </tr>
           ))}
@@ -236,6 +258,7 @@ const Contracts: React.FC = () => {
           <div className="modal-content">
             <h3>{isEdit ? "Sửa" : "Thêm"} hợp đồng</h3>
 
+            <label>Khách hàng *</label>
             <select name="KhachHangID" value={form.KhachHangID} onChange={handleChange}>
               <option value="">-- Chọn khách hàng --</option>
               {khachHangs.map(k => (
@@ -245,18 +268,31 @@ const Contracts: React.FC = () => {
               ))}
             </select>
 
-            <input type="text" name="MaHopDong" value={form.MaHopDong} onChange={handleChange} placeholder="Mã hợp đồng" />
+            <label>Mã hợp đồng</label>
+            <input name="MaHopDong" value={form.MaHopDong} onChange={handleChange} />
+
+            <label>Ngày ký *</label>
             <input type="date" name="NgayKy" value={form.NgayKy} onChange={handleChange} />
+
+            <label>Ngày hết hạn</label>
             <input type="date" name="NgayHetHan" value={form.NgayHetHan} onChange={handleChange} />
 
-            <input name="LoaiDichVu" value={form.LoaiDichVu} onChange={handleChange} placeholder="Loại dịch vụ" />
-            <input name="GiaTri" value={form.GiaTri} onChange={handleChange} placeholder="Giá trị" />
+            <label>Loại dịch vụ</label>
+            <input name="LoaiDichVu" value={form.LoaiDichVu} onChange={handleChange} />
 
-            <input name="FileHopDong" value={form.FileHopDong} onChange={handleChange} placeholder="Link file hợp đồng" />
+            <label>Giá trị (VNĐ)</label>
+            <input type="number" name="GiaTri" value={form.GiaTri} onChange={handleChange} />
 
-            <textarea name="MoTa" value={form.MoTa} onChange={handleChange} placeholder="Mô tả" />
-            <textarea name="DieuKhoan" value={form.DieuKhoan} onChange={handleChange} placeholder="Điều khoản" />
+            <label>File hợp đồng (link)</label>
+            <input name="FileHopDong" value={form.FileHopDong} onChange={handleChange} />
 
+            <label>Mô tả</label>
+            <textarea name="MoTa" value={form.MoTa} onChange={handleChange} />
+
+            <label>Điều khoản</label>
+            <textarea name="DieuKhoan" value={form.DieuKhoan} onChange={handleChange} />
+
+            <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option>Đang hoạt động</option>
               <option>Hết hạn</option>

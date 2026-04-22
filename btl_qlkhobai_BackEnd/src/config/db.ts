@@ -4,7 +4,7 @@ const config = {
   user: "sa",
   password: "123",
   server: "DESKTOP-FTDRE2U",
-  database: "DoAn2",
+  database: "DoAn3",
   options: {
     encrypt: false,
     trustServerCertificate: true
