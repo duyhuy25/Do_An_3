@@ -4,16 +4,35 @@ import "./Pages.css";
 interface Trip {
   ChuyenDiID: number;
   MaChuyen: string;
-  CangDiID: string;
-  CangDenID: string;
+  CangDiID: number;
+  CangDenID: number;
   NgayKhoiHanh: string;
   NgayDuKienDen: string;
-  PhuongTienID: string;
+  PhuongTienID: number;
   TrangThai: string;
+
+  TaiXe: string;
+  SDTTaiXe: string;
+  NhienLieuTieuThu: number;
+  QuangDuong: number;
+  GhiChu: string;
+}
+
+interface Cang {
+  CangID: number;
+  TenCang: string;
+}
+
+interface Vehicle {
+  PhuongTienID: number;
+  BienSo: string;
 }
 
 const Trips: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [cangs, setCangs] = useState<Cang[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -30,20 +49,24 @@ const Trips: React.FC = () => {
     NgayKhoiHanh: "",
     NgayDuKienDen: "",
     PhuongTienID: "",
-    TrangThai: ""
+    TrangThai: "Chuẩn bị",
+
+    TaiXe: "",
+    SDTTaiXe: "",
+    NhienLieuTieuThu: "",
+    QuangDuong: "",
+    GhiChu: ""
   });
-  
-  const fetchTrips = useCallback(async (searchTerm: string = "") => {
+
+  const fetchTrips = useCallback(async (searchTerm = "") => {
     try {
       setLoading(true);
 
-      const url = searchTerm.trim()
+      const url = searchTerm
         ? `http://localhost:5000/api/trip/trip/search?search=${encodeURIComponent(searchTerm)}`
-        : "http://localhost:5000/api/trip/trip";
+        : `http://localhost:5000/api/trip/trip`;
 
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Lỗi tải danh sách chuyến");
-
       const data = await res.json();
       setTrips(data);
     } catch (err: any) {
@@ -53,28 +76,30 @@ const Trips: React.FC = () => {
     }
   }, []);
 
+  const fetchOptions = useCallback(async () => {
+    const [c, v] = await Promise.all([
+      fetch("http://localhost:5000/api/port/port").then(r => r.json()),
+      fetch("http://localhost:5000/api/vehicle/vehicle").then(r => r.json())
+    ]);
+
+    setCangs(c);
+    setVehicles(v);
+  }, []);
+
   useEffect(() => {
     fetchTrips();
-  }, [fetchTrips]);
+    fetchOptions();
+  }, [fetchTrips, fetchOptions]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      fetchTrips(search);
-    }, 400);
-
-    return () => clearTimeout(timeout);
+    const t = setTimeout(() => fetchTrips(search), 400);
+    return () => clearTimeout(t);
   }, [search, fetchTrips]);
 
-  const formatID = (id: number) =>
-    "TRP" + id.toString().padStart(3, "0");
+  const formatID = (id: number) => "TRP" + id.toString().padStart(3, "0");
 
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleOpenAdd = () => {
@@ -88,60 +113,72 @@ const Trips: React.FC = () => {
       NgayKhoiHanh: "",
       NgayDuKienDen: "",
       PhuongTienID: "",
-      TrangThai: ""
+      TrangThai: "Chuẩn bị",
+
+      TaiXe: "",
+      SDTTaiXe: "",
+      NhienLieuTieuThu: "",
+      QuangDuong: "",
+      GhiChu: ""
     });
 
     setShowForm(true);
   };
 
-  const handleOpenEdit = (item: Trip) => {
+  const handleOpenEdit = (t: Trip) => {
     setIsEdit(true);
-    setSelected(item);
+    setSelected(t);
 
     setForm({
-      MaChuyen: item.MaChuyen,
-      CangDiID: item.CangDiID,
-      CangDenID: item.CangDenID,
-      NgayKhoiHanh: item.NgayKhoiHanh?.slice(0, 10) || "",
-      NgayDuKienDen: item.NgayDuKienDen?.slice(0, 10) || "",
-      PhuongTienID: item.PhuongTienID,
-      TrangThai: item.TrangThai
+      MaChuyen: t.MaChuyen,
+      CangDiID: t.CangDiID.toString(),
+      CangDenID: t.CangDenID.toString(),
+      NgayKhoiHanh: t.NgayKhoiHanh?.slice(0, 10),
+      NgayDuKienDen: t.NgayDuKienDen?.slice(0, 10),
+      PhuongTienID: t.PhuongTienID.toString(),
+      TrangThai: t.TrangThai,
+
+      TaiXe: t.TaiXe || "",
+      SDTTaiXe: t.SDTTaiXe || "",
+      NhienLieuTieuThu: t.NhienLieuTieuThu?.toString() || "",
+      QuangDuong: t.QuangDuong?.toString() || "",
+      GhiChu: t.GhiChu || ""
     });
 
     setShowForm(true);
   };
 
   const handleSubmit = async () => {
-    const body = { ...form };
-
-    try {
-      if (isEdit && selected) {
-        await fetch(
-          `http://localhost:5000/api/trip/trip/${selected.ChuyenDiID}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-          }
-        );
-      } else {
-        await fetch("http://localhost:5000/api/trip/addtrip", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-      }
-
-      setShowForm(false);
-      fetchTrips(search);
-    } catch (err) {
-      console.error(err);
-      alert("Lỗi lưu dữ liệu");
+    if (!form.MaChuyen || !form.CangDiID || !form.CangDenID) {
+      alert("Thiếu thông tin bắt buộc");
+      return;
     }
+
+    const payload = {
+      ...form,
+      CangDiID: Number(form.CangDiID),
+      CangDenID: Number(form.CangDenID),
+      PhuongTienID: Number(form.PhuongTienID),
+      NhienLieuTieuThu: Number(form.NhienLieuTieuThu || 0),
+      QuangDuong: Number(form.QuangDuong || 0)
+    };
+
+    const url = isEdit && selected
+      ? `http://localhost:5000/api/trip/trip/${selected.ChuyenDiID}`
+      : `http://localhost:5000/api/trip/addtrip`;
+
+    await fetch(url, {
+      method: isEdit ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    setShowForm(false);
+    fetchTrips(search);
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+    if (!window.confirm("Xóa?")) return;
 
     await fetch(`http://localhost:5000/api/trip/trip/${id}`, {
       method: "DELETE"
@@ -150,26 +187,18 @@ const Trips: React.FC = () => {
     fetchTrips(search);
   };
 
-  {loading && <div className="loading">Đang tải...</div>}
-  if (error) return <div className="error">Lỗi: {error}</div>;
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error">{error}</div>;
 
+  // ================= UI =================
   return (
     <div>
       <div className="header">
-        <h2>🚢 Danh sách chuyến đi</h2>
+        <h2>🚢 Chuyến đi</h2>
 
         <div className="toolbar">
-          <input
-            type="text"
-            placeholder="🔍 Tìm chuyến..."
-            className="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm chuyến
-          </button>
+          <input className="search" value={search} onChange={e => setSearch(e.target.value)} />
+          <button onClick={handleOpenAdd}>+ Thêm</button>
         </div>
       </div>
 
@@ -177,49 +206,34 @@ const Trips: React.FC = () => {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Mã chuyến</th>
+            <th>Mã</th>
             <th>Cảng đi</th>
             <th>Cảng đến</th>
             <th>ETD</th>
             <th>ETA</th>
-            <th>Phương tiện</th>
+            <th>Xe</th>
+            <th>Tài xế</th>
             <th>Trạng thái</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
 
         <tbody>
-          {trips.map((t) => (
+          {trips.map(t => (
             <tr key={t.ChuyenDiID} onClick={() => handleOpenEdit(t)}>
               <td>{formatID(t.ChuyenDiID)}</td>
               <td>{t.MaChuyen}</td>
-              <td>{t.CangDiID}</td>
-              <td>{t.CangDenID}</td>
-              <td>{t.NgayKhoiHanh ? new Date(t.NgayKhoiHanh).toLocaleDateString("vi-VN") : "-"}</td>
-              <td>{t.NgayDuKienDen ? new Date(t.NgayDuKienDen).toLocaleDateString("vi-VN") : "-"}</td>
-              <td>{t.PhuongTienID}</td>
+              <td>{cangs.find(c => c.CangID === t.CangDiID)?.TenCang || t.CangDiID}</td>
+              <td>{cangs.find(c => c.CangID === t.CangDenID)?.TenCang || t.CangDenID}</td>
+              <td>{t.NgayKhoiHanh && new Date(t.NgayKhoiHanh).toLocaleDateString()}</td>
+              <td>{t.NgayDuKienDen && new Date(t.NgayDuKienDen).toLocaleDateString()}</td>
+              <td>{vehicles.find(v => v.PhuongTienID === t.PhuongTienID)?.BienSo || t.PhuongTienID}</td>
+              <td>{t.TaiXe}</td>
               <td>{t.TrangThai}</td>
 
               <td>
-                <button
-                  className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(t);
-                  }}
-                >
-                  Sửa
-                </button>
-
-                <button
-                  className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(t.ChuyenDiID);
-                  }}
-                >
-                  Xóa
-                </button>
+                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(t); }}>Sửa</button>
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(t.ChuyenDiID); }}>Xóa</button>
               </td>
             </tr>
           ))}
@@ -229,26 +243,46 @@ const Trips: React.FC = () => {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} chuyến đi</h3>
+            <h3>{isEdit ? "Sửa" : "Thêm"} chuyến</h3>
 
             <input name="MaChuyen" value={form.MaChuyen} onChange={handleChange} placeholder="Mã chuyến" />
-            <input name="CangDiID" value={form.CangDiID} onChange={handleChange} placeholder="Cảng đi" />
-            <input name="CangDenID" value={form.CangDenID} onChange={handleChange} placeholder="Cảng đến" />
+
+            <select name="CangDiID" value={form.CangDiID} onChange={handleChange}>
+              <option value="">-- Cảng đi --</option>
+              {cangs.map(c => <option key={c.CangID} value={c.CangID}>{c.TenCang}</option>)}
+            </select>
+
+            <select name="CangDenID" value={form.CangDenID} onChange={handleChange}>
+              <option value="">-- Cảng đến --</option>
+              {cangs.map(c => <option key={c.CangID} value={c.CangID}>{c.TenCang}</option>)}
+            </select>
 
             <input type="date" name="NgayKhoiHanh" value={form.NgayKhoiHanh} onChange={handleChange} />
             <input type="date" name="NgayDuKienDen" value={form.NgayDuKienDen} onChange={handleChange} />
 
-            <input name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange} placeholder="Phương tiện" />
-            <input name="TrangThai" value={form.TrangThai} onChange={handleChange} placeholder="Trạng thái" />
+            <select name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange}>
+              <option value="">-- Chọn xe --</option>
+              {vehicles.map(v => <option key={v.PhuongTienID} value={v.PhuongTienID}>{v.BienSo}</option>)}
+            </select>
+
+            <input name="TaiXe" value={form.TaiXe} onChange={handleChange} placeholder="Tài xế" />
+            <input name="SDTTaiXe" value={form.SDTTaiXe} onChange={handleChange} placeholder="SĐT tài xế" />
+
+            <input name="QuangDuong" value={form.QuangDuong} onChange={handleChange} placeholder="Quãng đường (km)" />
+            <input name="NhienLieuTieuThu" value={form.NhienLieuTieuThu} onChange={handleChange} placeholder="Nhiên liệu (L)" />
+
+            <textarea name="GhiChu" value={form.GhiChu} onChange={handleChange} placeholder="Ghi chú" />
+
+            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option>Chuẩn bị</option>
+              <option>Đang chạy</option>
+              <option>Hoàn thành</option>
+              <option>Hủy</option>
+            </select>
 
             <div className="modal-actions">
-              <button className="btn-submit" onClick={handleSubmit}>
-                {isEdit ? "Cập nhật" : "Thêm"}
-              </button>
-
-              <button className="btn-cancel" onClick={() => setShowForm(false)}>
-                Hủy
-              </button>
+              <button onClick={handleSubmit}>Lưu</button>
+              <button onClick={() => setShowForm(false)}>Hủy</button>
             </div>
           </div>
         </div>

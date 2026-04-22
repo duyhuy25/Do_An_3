@@ -9,6 +9,11 @@ interface Vehicle {
   TaiTrong: number;
   TrangThai: string;
   MoTa: string;
+
+  NamSanXuat: number;
+  ChuSoHuu: string;
+  HanDangKiem: string;
+  GPS: string;
 }
 
 const Vehicles: React.FC = () => {
@@ -27,10 +32,16 @@ const Vehicles: React.FC = () => {
     BienSo: "",
     HinhAnh: "",
     TaiTrong: "",
-    TrangThai: "",
-    MoTa: ""
+    TrangThai: "Sẵn sàng",
+    MoTa: "",
+
+    NamSanXuat: "",
+    ChuSoHuu: "",
+    HanDangKiem: "",
+    GPS: ""
   });
 
+  // FETCH
   const fetchVehicles = useCallback(async (searchTerm: string = "") => {
     try {
       setLoading(true);
@@ -40,7 +51,7 @@ const Vehicles: React.FC = () => {
         : `http://localhost:5000/api/vehicle/vehicle`;
 
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Lỗi tải danh sách phương tiện");
+      if (!res.ok) throw new Error("Lỗi tải danh sách");
 
       const data = await res.json();
       setVehicles(data);
@@ -51,27 +62,18 @@ const Vehicles: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchVehicles();
-  }, [fetchVehicles]);
+  useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      fetchVehicles(search);
-    }, 400);
-
-    return () => clearTimeout(timeout);
+    const t = setTimeout(() => fetchVehicles(search), 400);
+    return () => clearTimeout(t);
   }, [search, fetchVehicles]);
 
-  const formatID = (id: number) =>
-    "VH" + id.toString().padStart(3, "0");
+  const formatID = (id: number) => "VH" + id.toString().padStart(3, "0");
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      setForm({
-        ...form,
-        [e.target.name]: e.target.value
-      });
-    };
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleOpenAdd = () => {
     setIsEdit(false);
@@ -82,24 +84,34 @@ const Vehicles: React.FC = () => {
       BienSo: "",
       HinhAnh: "",
       TaiTrong: "",
-      TrangThai: "",
-      MoTa: ""
+      TrangThai: "Sẵn sàng",
+      MoTa: "",
+
+      NamSanXuat: "",
+      ChuSoHuu: "",
+      HanDangKiem: "",
+      GPS: ""
     });
 
     setShowForm(true);
   };
 
-  const handleOpenEdit = (item: Vehicle) => {
+  const handleOpenEdit = (v: Vehicle) => {
     setIsEdit(true);
-    setSelected(item);
+    setSelected(v);
 
     setForm({
-      LoaiPhuongTien: item.LoaiPhuongTien || "",
-      BienSo: item.BienSo || "",
-      HinhAnh: item.HinhAnh || "",
-      TaiTrong: item.TaiTrong?.toString() || "",
-      TrangThai: item.TrangThai || "",
-      MoTa: item.MoTa || ""
+      LoaiPhuongTien: v.LoaiPhuongTien || "",
+      BienSo: v.BienSo || "",
+      HinhAnh: v.HinhAnh || "",
+      TaiTrong: v.TaiTrong?.toString() || "",
+      TrangThai: v.TrangThai || "Sẵn sàng",
+      MoTa: v.MoTa || "",
+
+      NamSanXuat: v.NamSanXuat?.toString() || "",
+      ChuSoHuu: v.ChuSoHuu || "",
+      HanDangKiem: v.HanDangKiem ? v.HanDangKiem.split("T")[0] : "",
+      GPS: v.GPS || ""
     });
 
     setShowForm(true);
@@ -107,85 +119,58 @@ const Vehicles: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!form.LoaiPhuongTien || !form.BienSo) {
-      alert("Vui lòng nhập đầy đủ Loại phương tiện và Biển số!");
+      alert("Thiếu loại xe hoặc biển số!");
       return;
     }
 
     const payload = {
       ...form,
-      TaiTrong: Number(form.TaiTrong)
+      TaiTrong: Number(form.TaiTrong || 0),
+      NamSanXuat: Number(form.NamSanXuat || 0)
     };
 
     try {
-      let res: Response;
+      const url = isEdit && selected
+        ? `http://localhost:5000/api/vehicle/vehicle/${selected.PhuongTienID}`
+        : `http://localhost:5000/api/vehicle/vehicle`;
 
-      if (isEdit && selected) {
-        res = await fetch(
-          `http://localhost:5000/api/vehicle/vehicle/${selected.PhuongTienID}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          }
-        );
-      } else {
-        res = await fetch("http://localhost:5000/api/vehicle/vehicle", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-      }
+      const res = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Lỗi server");
-      }
+      if (!res.ok) throw new Error(await res.text());
 
-      alert(isEdit ? "Cập nhật thành công!" : "Thêm phương tiện thành công!");
+      alert("Thành công!");
       setShowForm(false);
       fetchVehicles(search);
     } catch (err: any) {
-      alert("Lỗi: " + err.message);
+      alert(err.message);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
+    if (!window.confirm("Xóa?")) return;
 
-    try {
-      const res = await fetch(`http://localhost:5000/api/vehicle/vehicle/${id}`, {
-        method: "DELETE"
-      });
+    await fetch(`http://localhost:5000/api/vehicle/vehicle/${id}`, {
+      method: "DELETE"
+    });
 
-      if (!res.ok) throw new Error();
-
-      alert("Xóa thành công!");
-      fetchVehicles(search);
-    } catch {
-      alert("Lỗi khi xóa");
-    }
+    fetchVehicles(search);
   };
 
-  if (error) return <div className="error">Lỗi: {error}</div>;
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error">{error}</div>;
 
   return (
     <div>
       <div className="header">
-        <h2>🚚 Danh sách phương tiện</h2>
+        <h2>🚚 Phương tiện</h2>
 
         <div className="toolbar">
-          <input
-            type="text"
-            placeholder="🔍 Tìm phương tiện..."
-            className="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            autoComplete="off"
-          />
-
-          <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm phương tiện
-          </button>
+          <input className="search" value={search} onChange={e => setSearch(e.target.value)} />
+          <button onClick={handleOpenAdd}>+ Thêm</button>
         </div>
       </div>
 
@@ -193,57 +178,38 @@ const Vehicles: React.FC = () => {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Loại xe</th>
+            <th>Ảnh</th>
+            <th>Loại</th>
             <th>Biển số</th>
-            <th>Hình ảnh</th>
             <th>Tải trọng</th>
+            <th>Năm SX</th>
             <th>Trạng thái</th>
-            <th>Mô tả</th>
+            <th>GPS</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
 
         <tbody>
-          {vehicles.map((v) => (
+          {vehicles.map(v => (
             <tr key={v.PhuongTienID} onClick={() => handleOpenEdit(v)}>
               <td>{formatID(v.PhuongTienID)}</td>
-              <td>{v.LoaiPhuongTien}</td>
-              <td>{v.BienSo}</td>
+
               <td>
                 {v.HinhAnh ? (
-                  <img
-                    src={`/images/${v.HinhAnh}`}
-                    alt="vehicle"
-                    style={{ width: "60px", height: "40px", objectFit: "cover" }}
-                  />
-                ) : (
-                  "-"
-                )}
+                  <img src={v.HinhAnh} width="60" />
+                ) : "🚗"}
               </td>
+
+              <td>{v.LoaiPhuongTien}</td>
+              <td>{v.BienSo}</td>
               <td>{v.TaiTrong}</td>
+              <td>{v.NamSanXuat}</td>
               <td>{v.TrangThai}</td>
-              <td>{v.MoTa}</td>
+              <td>{v.GPS || "-"}</td>
 
               <td>
-                <button
-                  className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(v);
-                  }}
-                >
-                  Sửa
-                </button>
-
-                <button
-                  className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(v.PhuongTienID);
-                  }}
-                >
-                  Xóa
-                </button>
+                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(v); }}>Sửa</button>
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(v.PhuongTienID); }}>Xóa</button>
               </td>
             </tr>
           ))}
@@ -253,28 +219,34 @@ const Vehicles: React.FC = () => {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h3>{isEdit ? "✏️ Sửa" : "➕ Thêm"} phương tiện</h3>
+            <h3>{isEdit ? "Sửa" : "Thêm"} phương tiện</h3>
 
             <input name="LoaiPhuongTien" value={form.LoaiPhuongTien} onChange={handleChange} placeholder="Loại xe" />
             <input name="BienSo" value={form.BienSo} onChange={handleChange} placeholder="Biển số" />
-            <select name="HinhAnh" value={form.HinhAnh} onChange={handleChange}>
-              <option value="">-- Chọn ảnh --</option>
-              <option value="xe1.jpg">Xe 1</option>
-              <option value="xe2.jpg">Xe 2</option>
-              <option value="xe3.jpg">Xe 3</option>
-            </select>
+
+            <input name="HinhAnh" value={form.HinhAnh} onChange={handleChange} placeholder="Link ảnh" />
+            {form.HinhAnh && <img src={form.HinhAnh} width="80" />}
+
             <input name="TaiTrong" value={form.TaiTrong} onChange={handleChange} placeholder="Tải trọng" />
-            <input name="TrangThai" value={form.TrangThai} onChange={handleChange} placeholder="Trạng thái" />
+            <input name="NamSanXuat" value={form.NamSanXuat} onChange={handleChange} placeholder="Năm SX" />
+
+            <input name="ChuSoHuu" value={form.ChuSoHuu} onChange={handleChange} placeholder="Chủ sở hữu" />
+
+            <input type="date" name="HanDangKiem" value={form.HanDangKiem} onChange={handleChange} />
+
+            <input name="GPS" value={form.GPS} onChange={handleChange} placeholder="GPS (lat,lng)" />
+
+            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option>Sẵn sàng</option>
+              <option>Đang chạy</option>
+              <option>Bảo trì</option>
+            </select>
+
             <input name="MoTa" value={form.MoTa} onChange={handleChange} placeholder="Mô tả" />
 
             <div className="modal-actions">
-              <button className="btn-submit" onClick={handleSubmit}>
-                {isEdit ? "Cập nhật" : "Thêm"}
-              </button>
-
-              <button className="btn-cancel" onClick={() => setShowForm(false)}>
-                Hủy
-              </button>
+              <button onClick={handleSubmit}>Lưu</button>
+              <button onClick={() => setShowForm(false)}>Hủy</button>
             </div>
           </div>
         </div>

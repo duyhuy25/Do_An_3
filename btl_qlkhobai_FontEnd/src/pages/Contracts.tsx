@@ -9,6 +9,11 @@ interface Contract {
   LoaiDichVu: string;
   GiaTri: number;
   TrangThai: string;
+
+  MaHopDong: string;
+  MoTa: string;
+  FileHopDong: string;
+  DieuKhoan: string;
 }
 
 interface KhachHangOption {
@@ -36,6 +41,11 @@ const Contracts: React.FC = () => {
     LoaiDichVu: "",
     GiaTri: "",
     TrangThai: "Đang hoạt động",
+
+    MaHopDong: "",
+    MoTa: "",
+    FileHopDong: "",
+    DieuKhoan: ""
   });
 
   const fetchContracts = useCallback(async (searchTerm: string = "") => {
@@ -47,59 +57,43 @@ const Contracts: React.FC = () => {
         : "http://localhost:5000/api/contract/contract";
 
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Lỗi tải danh sách hợp đồng");
+      if (!res.ok) throw new Error("Lỗi tải hợp đồng");
 
       const data = await res.json();
       setContracts(data);
     } catch (err: any) {
-      setError(err.message || "Không thể tải hợp đồng");
-      console.error(err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const fetchKhachHangs = useCallback(async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/customer/customer");
-      const data = await res.json();
-      setKhachHangs(data);
-    } catch (err) {
-      console.error("Error fetching khach hang:", err);
-    }
+  const fetchKH = useCallback(async () => {
+    const res = await fetch("http://localhost:5000/api/customer/customer");
+    const data = await res.json();
+    setKhachHangs(data);
   }, []);
 
   useEffect(() => {
     fetchContracts();
-    fetchKhachHangs();
-  }, [fetchContracts, fetchKhachHangs]);
+    fetchKH();
+  }, [fetchContracts, fetchKH]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      fetchContracts(search);
-    }, 400);
-
-    return () => clearTimeout(timeout);
+    const t = setTimeout(() => fetchContracts(search), 400);
+    return () => clearTimeout(t);
   }, [search, fetchContracts]);
 
   const formatID = (id: number) => "HD" + id.toString().padStart(3, "0");
 
-  const khMap = Object.fromEntries(
-    khachHangs.map((k) => [k.KhachHangID, k])
-  );
-
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleOpenAdd = () => {
     setIsEdit(false);
     setSelected(null);
+
     setForm({
       KhachHangID: "",
       NgayKy: "",
@@ -107,114 +101,99 @@ const Contracts: React.FC = () => {
       LoaiDichVu: "",
       GiaTri: "",
       TrangThai: "Đang hoạt động",
+
+      MaHopDong: "",
+      MoTa: "",
+      FileHopDong: "",
+      DieuKhoan: ""
     });
+
     setShowForm(true);
   };
 
-  const handleOpenEdit = (item: Contract) => {
+  const handleOpenEdit = (c: Contract) => {
     setIsEdit(true);
-    setSelected(item);
+    setSelected(c);
+
     setForm({
-      KhachHangID: item.KhachHangID.toString(),
-      NgayKy: item.NgayKy ? item.NgayKy.slice(0, 10) : "",
-      NgayHetHan: item.NgayHetHan ? item.NgayHetHan.slice(0, 10) : "",
-      LoaiDichVu: item.LoaiDichVu,
-      GiaTri: item.GiaTri.toString(),
-      TrangThai: item.TrangThai,
+      KhachHangID: c.KhachHangID.toString(),
+      NgayKy: c.NgayKy?.slice(0, 10),
+      NgayHetHan: c.NgayHetHan?.slice(0, 10) || "",
+      LoaiDichVu: c.LoaiDichVu,
+      GiaTri: c.GiaTri.toString(),
+      TrangThai: c.TrangThai,
+
+      MaHopDong: c.MaHopDong || "",
+      MoTa: c.MoTa || "",
+      FileHopDong: c.FileHopDong || "",
+      DieuKhoan: c.DieuKhoan || ""
     });
+
     setShowForm(true);
   };
 
+  // ================= SUBMIT =================
   const handleSubmit = async () => {
-    if (!form.KhachHangID) {
-      alert("Vui lòng chọn khách hàng");
-      return;
-    }
-
-    if (!form.NgayKy) {
-      alert("Vui lòng chọn ngày ký");
-      return;
-    }
-
-    if (!form.GiaTri || isNaN(Number(form.GiaTri))) {
-      alert("Giá trị phải là số hợp lệ");
+    if (!form.KhachHangID || !form.NgayKy) {
+      alert("Thiếu thông tin bắt buộc");
       return;
     }
 
     if (form.NgayHetHan && form.NgayHetHan < form.NgayKy) {
-      alert("Ngày hết hạn phải >= ngày ký");
+      alert("Ngày hết hạn không hợp lệ");
       return;
     }
 
-    const body = {
+    const payload = {
       ...form,
       KhachHangID: Number(form.KhachHangID),
-      GiaTri: Number(form.GiaTri),
-      NgayKy: form.NgayKy || null,
-      NgayHetHan: form.NgayHetHan || null,
+      GiaTri: Number(form.GiaTri || 0),
     };
 
     try {
-      if (isEdit && selected) {
-        await fetch(
-          `http://localhost:5000/api/contract/contract/${selected.HopDongID}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          }
-        );
-      } else {
-        await fetch("http://localhost:5000/api/contract/addcontract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      }
+      const url = isEdit && selected
+        ? `http://localhost:5000/api/contract/contract/${selected.HopDongID}`
+        : `http://localhost:5000/api/contract/addcontract`;
+
+      await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       setShowForm(false);
       fetchContracts(search);
-    } catch (err) {
-      console.error("Submit error:", err);
-      alert("Có lỗi khi lưu hợp đồng");
+    } catch {
+      alert("Lỗi lưu dữ liệu");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa hợp đồng này?")) return;
+    if (!window.confirm("Xóa hợp đồng?")) return;
 
-    try {
-      await fetch(`http://localhost:5000/api/contract/contract/${id}`, {
-        method: "DELETE",
-      });
+    await fetch(`http://localhost:5000/api/contract/contract/${id}`, {
+      method: "DELETE"
+    });
 
-      fetchContracts(search);
-    } catch (err) {
-      console.error("Delete error:", err);
-      alert("Không thể xóa hợp đồng");
-    }
+    fetchContracts(search);
   };
 
-  {loading && <div className="loading">Đang tải dữ liệu...</div>}
-  {error && <div className="error">Lỗi: {error}</div>}
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error">{error}</div>;
 
+  // ================= UI =================
   return (
     <div>
       <div className="header">
-        <h2>📄 Danh sách hợp đồng</h2>
+        <h2>📄 Hợp đồng</h2>
 
         <div className="toolbar">
           <input
-            type="text"
-            placeholder="🔍 Tìm hợp đồng..."
             className="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-
-          <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm hợp đồng
-          </button>
+          <button onClick={handleOpenAdd}>+ Thêm</button>
         </div>
       </div>
 
@@ -222,141 +201,71 @@ const Contracts: React.FC = () => {
         <thead>
           <tr>
             <th>ID</th>
+            <th>Mã HĐ</th>
             <th>Khách hàng</th>
             <th>Ngày ký</th>
-            <th>Ngày hết hạn</th>
-            <th>Loại dịch vụ</th>
-            <th>Giá trị (VNĐ)</th>
+            <th>Giá trị</th>
             <th>Trạng thái</th>
+            <th>File</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
 
         <tbody>
-          {contracts.map((c) => {
-            const kh = khMap[c.KhachHangID];
+          {contracts.map(c => (
+            <tr key={c.HopDongID} onClick={() => handleOpenEdit(c)}>
+              <td>{formatID(c.HopDongID)}</td>
+              <td>{c.MaHopDong}</td>
+              <td>{c.KhachHangID}</td>
+              <td>{new Date(c.NgayKy).toLocaleDateString("vi-VN")}</td>
+              <td>{c.GiaTri.toLocaleString()}</td>
+              <td>{c.TrangThai}</td>
+              <td>{c.FileHopDong ? "📎" : "-"}</td>
 
-            return (
-              <tr key={c.HopDongID} onClick={() => handleOpenEdit(c)}>
-                <td>{formatID(c.HopDongID)}</td>
-                <td>{kh ? `${kh.TenKH} (${kh.SDT})` : c.KhachHangID}</td>
-
-                <td>
-                  {c.NgayKy
-                    ? new Date(c.NgayKy).toLocaleDateString("vi-VN")
-                    : "-"}
-                </td>
-
-                <td>
-                  {c.NgayHetHan
-                    ? new Date(c.NgayHetHan).toLocaleDateString("vi-VN")
-                    : "-"}
-                </td>
-
-                <td>{c.LoaiDichVu}</td>
-                <td>{c.GiaTri.toLocaleString("vi-VN")}</td>
-                <td>{c.TrangThai}</td>
-
-                <td>
-                  <button
-                    className="btn-edit"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEdit(c);
-                    }}
-                  >
-                    Sửa
-                  </button>
-
-                  <button
-                    className="btn-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(c.HopDongID);
-                    }}
-                  >
-                    Xóa
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
+              <td>
+                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(c); }}>Sửa</button>
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(c.HopDongID); }}>Xóa</button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <h3>{isEdit ? "✏️ Sửa hợp đồng" : "➕ Thêm hợp đồng"}</h3>
+            <h3>{isEdit ? "Sửa" : "Thêm"} hợp đồng</h3>
 
-            <label>Khách hàng *</label>
-            <select
-              name="KhachHangID"
-              value={form.KhachHangID}
-              onChange={handleChange}
-            >
+            <select name="KhachHangID" value={form.KhachHangID} onChange={handleChange}>
               <option value="">-- Chọn khách hàng --</option>
-              {khachHangs.map((kh) => (
-                <option key={kh.KhachHangID} value={kh.KhachHangID}>
-                  {kh.TenKH} - {kh.SDT}
+              {khachHangs.map(k => (
+                <option key={k.KhachHangID} value={k.KhachHangID}>
+                  {k.TenKH} - {k.SDT}
                 </option>
               ))}
             </select>
 
-            <label>Ngày ký *</label>
-            <input
-              type="date"
-              name="NgayKy"
-              value={form.NgayKy}
-              onChange={handleChange}
-            />
+            <input type="text" name="MaHopDong" value={form.MaHopDong} onChange={handleChange} placeholder="Mã hợp đồng" />
+            <input type="date" name="NgayKy" value={form.NgayKy} onChange={handleChange} />
+            <input type="date" name="NgayHetHan" value={form.NgayHetHan} onChange={handleChange} />
 
-            <label>Ngày hết hạn</label>
-            <input
-              type="date"
-              name="NgayHetHan"
-              value={form.NgayHetHan}
-              onChange={handleChange}
-            />
+            <input name="LoaiDichVu" value={form.LoaiDichVu} onChange={handleChange} placeholder="Loại dịch vụ" />
+            <input name="GiaTri" value={form.GiaTri} onChange={handleChange} placeholder="Giá trị" />
 
-            <label>Loại dịch vụ</label>
-            <input
-              name="LoaiDichVu"
-              value={form.LoaiDichVu}
-              onChange={handleChange}
-            />
+            <input name="FileHopDong" value={form.FileHopDong} onChange={handleChange} placeholder="Link file hợp đồng" />
 
-            <label>Giá trị (VNĐ) *</label>
-            <input
-              type="number"
-              name="GiaTri"
-              value={form.GiaTri}
-              onChange={handleChange}
-            />
+            <textarea name="MoTa" value={form.MoTa} onChange={handleChange} placeholder="Mô tả" />
+            <textarea name="DieuKhoan" value={form.DieuKhoan} onChange={handleChange} placeholder="Điều khoản" />
 
-            <label>Trạng thái</label>
-            <select
-              name="TrangThai"
-              value={form.TrangThai}
-              onChange={handleChange}
-            >
-              <option value="Đang hoạt động">Đang hoạt động</option>
-              <option value="Hết hạn">Hết hạn</option>
-              <option value="Chấm dứt">Chấm dứt</option>
-              <option value="Chuẩn bị">Chuẩn bị</option>
+            <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option>Đang hoạt động</option>
+              <option>Hết hạn</option>
+              <option>Chấm dứt</option>
             </select>
 
             <div className="modal-actions">
-              <button className="btn-submit" onClick={handleSubmit}>
-                {isEdit ? "Cập nhật" : "Thêm"}
-              </button>
-
-              <button
-                className="btn-cancel"
-                onClick={() => setShowForm(false)}
-              >
-                Hủy
-              </button>
+              <button onClick={handleSubmit}>Lưu</button>
+              <button onClick={() => setShowForm(false)}>Hủy</button>
             </div>
           </div>
         </div>
