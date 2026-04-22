@@ -292,10 +292,29 @@ const Containers: React.FC = () => {
               <td>{c.NhietDoBaoQuan ?? "-"}</td>
               <td>{c.DoAm ?? "-"}</td>
 
-              <td>
-                <button className="btn-edit" onClick={(e)=>{e.stopPropagation();handleOpenEdit(c);}}>Sửa</button>
-                <button className="btn-delete" onClick={(e)=>{e.stopPropagation();handleDelete(c.ContainerID);}}>Xóa</button>
-              </td>
+              <td className="actions">
+              <div className="td-actions">
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(c);
+                  }}
+                >
+                  Sửa
+                </button>
+
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(c.ContainerID);
+                  }}
+                >
+                  Xóa
+                </button>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

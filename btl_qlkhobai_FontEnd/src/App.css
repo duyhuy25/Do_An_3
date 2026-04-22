@@ -117,3 +117,23 @@ table img {
   border-radius: 6px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
+td .td-actions {
+  display: flex;
+  flex-direction: column;  
+  gap: 6px;
+  align-items: stretch;    
+}
+
+td .td-actions button {
+  width: 100%;          
+}
+td.actions {
+  width: 60px;          
+  max-width: 60px;
+  min-width: 60px;     
+}
+
+td .td-actions button {
+  width: 100%;            
+}

@@ -170,7 +170,8 @@ const ItemTypes: React.FC = () => {
               <td>{t.DanhMuc}</td>
               <td>{t.MoTa}</td>
 
-              <td>
+              <td className="actions">
+              <div className="td-actions">
                 <button
                   className="btn-edit"
                   onClick={(e) => {
@@ -190,7 +191,8 @@ const ItemTypes: React.FC = () => {
                 >
                   Xóa
                 </button>
-              </td>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

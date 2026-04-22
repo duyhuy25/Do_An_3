@@ -202,13 +202,28 @@ const AssignmentContainers: React.FC = () => {
               <td>{new Date(a.ThoiGianPhanCong).toLocaleString("vi-VN")}</td>
               <td>{a.TrangThai}</td>
               <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(a); }}>
+              <div className="td-actions">
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(a);
+                  }}
+                >
                   Sửa
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(a.ID); }}>
+
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(a.ID);
+                  }}
+                >
                   Xóa
                 </button>
-              </td>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

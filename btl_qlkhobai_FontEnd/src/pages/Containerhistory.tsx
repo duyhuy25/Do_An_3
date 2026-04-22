@@ -250,7 +250,8 @@ const ContainerHistory: React.FC = () => {
               </td>
               <td>{h.NguoiCapNhat || "-"}</td>
 
-              <td>
+              <td className="actions">
+              <div className="td-actions">
                 <button
                   className="btn-edit"
                   onClick={(e) => {
@@ -270,7 +271,8 @@ const ContainerHistory: React.FC = () => {
                 >
                   Xóa
                 </button>
-              </td>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

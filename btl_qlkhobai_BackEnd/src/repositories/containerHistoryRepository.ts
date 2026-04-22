@@ -63,6 +63,13 @@ export const updateHistory = async (id: number, data: any) => {
       WHERE LichSuID = @LichSuID
     `);
 };
+export const deleteHistory = async (id: number) => {
+  const pool = await poolPromise;
+
+  await pool.request()
+    .input("LichSuID", sql.Int, id)
+    .query("DELETE FROM LichSuContainer WHERE LichSuID = @LichSuID");
+};
 
 export const searchHistory = async (searchTerm = "") => {
   const pool = await poolPromise;
