@@ -4,7 +4,7 @@ import { poolPromise } from "../config/db";
 export const getAllSuppliers = async () => {
   const pool = await poolPromise;
   const result = await pool.request().query(`
-    SELECT * FROM NhaCungCap ORDER BY NCCID DESC
+    SELECT * FROM NhaCungCap ORDER BY NCCID ASC
   `);
   return result.recordset;
 };
