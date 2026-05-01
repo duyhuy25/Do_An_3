@@ -194,7 +194,7 @@ const Warehouses: React.FC = () => {
           />
 
           <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm kho
+            + Thêm
           </button>
         </div>
       </div>
@@ -230,10 +230,12 @@ const Warehouses: React.FC = () => {
               <td>{w.DiaChi}</td>
               <td>{w.NhanVienQuanLy}</td>
 
-              <td>
+              <td className="actions">
+              <div className="td-actions">
                 <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(w); }}>Sửa</button>
                 <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(w.KhoID); }}>Xóa</button>
-              </td>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

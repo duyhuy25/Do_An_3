@@ -191,7 +191,9 @@ const Contracts: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button onClick={handleOpenAdd}>+ Thêm</button>
+          <button className="btn-add" onClick={handleOpenAdd}>
+            + Thêm
+          </button>
         </div>
       </div>
 
@@ -244,10 +246,12 @@ const Contracts: React.FC = () => {
 
               <td>{c.MoTa || "-"}</td>
 
-              <td>
-                <button onClick={(e)=>{e.stopPropagation();handleOpenEdit(c);}}>Sửa</button>
-                <button onClick={(e)=>{e.stopPropagation();handleDelete(c.HopDongID);}}>Xóa</button>
-              </td>
+              <td className="actions">
+              <div className="td-actions">
+                <button className="btn-edit" onClick={(e)=>{e.stopPropagation();handleOpenEdit(c);}}>Sửa</button>
+                <button className="btn-delete" onClick={(e)=>{e.stopPropagation();handleDelete(c.HopDongID);}}>Xóa</button>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

@@ -263,10 +263,12 @@ const Users: React.FC = () => {
               <td>{u.TenVaiTro || u.RoleID}</td>
               <td>{u.TrangThai}</td>
 
-              <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(u); }}>Sửa</button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(u.UserID); }}>Xóa</button>
-              </td>
+              <td className="actions">
+              <div className="td-actions">
+                <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(u); }}>Sửa</button>
+                <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(u.UserID); }}>Xóa</button>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

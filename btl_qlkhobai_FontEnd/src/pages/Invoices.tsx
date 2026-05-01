@@ -426,10 +426,29 @@ const Invoices: React.FC = () => {
                   )}
                 </td>
 
-                <td style={{ verticalAlign: 'top', paddingTop: '15px' }}>
-                  <button className="btn-edit" onClick={() => handleOpenEdit(i)} style={{ background: '#fff', color: '#333', border: '1px solid #ccc', fontSize: '12px', padding: '4px 8px' }}>Sửa</button>
-                  <button className="btn-delete" onClick={() => handleDelete(i.HoaDonID)} style={{ background: '#fff', color: '#333', border: '1px solid #ccc', fontSize: '12px', padding: '4px 8px' }}>Xóa</button>
-                </td>
+                <td className="actions">
+              <div className="td-actions">
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(i);
+                  }}
+                >
+                  Sửa
+                </button>
+
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(i.HoaDonID);
+                  }}
+                >
+                  Xóa
+                </button>
+              </div>
+            </td>
               </tr>
             );
           })}

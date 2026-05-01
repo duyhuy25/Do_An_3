@@ -201,7 +201,7 @@ const AssignmentContainers: React.FC = () => {
               <td>{formatTrip(a.ChuyenDiID)}</td>
               <td>{new Date(a.ThoiGianPhanCong).toLocaleString("vi-VN")}</td>
               <td>{a.TrangThai}</td>
-              <td>
+              <td className="actions">
               <div className="td-actions">
                 <button
                   className="btn-edit"

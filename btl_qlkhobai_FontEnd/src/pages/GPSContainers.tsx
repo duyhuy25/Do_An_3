@@ -151,8 +151,8 @@ const GPSContainers: React.FC = () => {
       <div className="header">
         <h2>📍 GPS Container</h2>
         <button className="btn-add" onClick={handleOpenAdd}>
-          + Thêm GPS
-        </button>
+            + Thêm
+          </button>
       </div>
 
       <table>
@@ -176,14 +176,29 @@ const GPSContainers: React.FC = () => {
               <td>{g.KinhDo}</td>
               <td>{g.TocDo}</td>
               <td>{new Date(g.ThoiGian).toLocaleString("vi-VN")}</td>
-              <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(g); }}>
+              <td className="actions">
+              <div className="td-actions">
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(g);
+                  }}
+                >
                   Sửa
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(g.GPSID); }}>
+
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(g.GPSID);
+                  }}
+                >
                   Xóa
                 </button>
-              </td>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

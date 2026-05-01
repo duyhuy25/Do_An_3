@@ -148,7 +148,7 @@ const Suppliers: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
           <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm NCC
+            + Thêm
           </button>
         </div>
       </div>
@@ -174,14 +174,29 @@ const Suppliers: React.FC = () => {
               <td>{s.SDT}</td>
               <td>{s.Email}</td>
               <td>{s.DiaChi}</td>
-              <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(s); }}>
+              <td className="actions">
+              <div className="td-actions">
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(s);
+                  }}
+                >
                   Sửa
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(s.NCCID); }}>
+
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(s.NCCID);
+                  }}
+                >
                   Xóa
                 </button>
-              </td>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

@@ -198,7 +198,9 @@ const Trips: React.FC = () => {
 
         <div className="toolbar">
           <input className="search" value={search} onChange={e => setSearch(e.target.value)} />
-          <button onClick={handleOpenAdd}>+ Thêm</button>
+          <button className="btn-add" onClick={handleOpenAdd}>
+            + Thêm
+          </button>
         </div>
       </div>
 
@@ -245,9 +247,11 @@ const Trips: React.FC = () => {
             <td>{t.TrangThai}</td>
             <td>{t.GhiChu || "-"}</td>
 
-            <td>
-              <button onClick={(e)=>{e.stopPropagation();handleOpenEdit(t);}}>Sửa</button>
-              <button onClick={(e)=>{e.stopPropagation();handleDelete(t.ChuyenDiID);}}>Xóa</button>
+            <td className="actions">
+              <div className="td-actions">
+                <button className="btn-edit" onClick={(e)=>{e.stopPropagation();handleOpenEdit(t);}}>Sửa</button>
+                <button className="btn-delete" onClick={(e)=>{e.stopPropagation();handleDelete(t.ChuyenDiID);}}>Xóa</button>
+              </div>
             </td>
           </tr>
         ))}

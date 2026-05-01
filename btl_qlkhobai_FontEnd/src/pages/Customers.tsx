@@ -165,7 +165,7 @@ const Customers: React.FC = () => {
           />
 
           <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm khách hàng
+            + Thêm
           </button>
         </div>
       </div>
@@ -191,7 +191,8 @@ const Customers: React.FC = () => {
               <td>{c.SDT}</td>
               <td>{c.Email || "-"}</td>
 
-              <td>
+              <td className="actions">
+              <div className="td-actions">
                 <button
                   className="btn-edit"
                   onClick={(e) => {
@@ -211,7 +212,8 @@ const Customers: React.FC = () => {
                 >
                   Xóa
                 </button>
-              </td>
+                </div>
+            </td>
             </tr>
           ))}
         </tbody>

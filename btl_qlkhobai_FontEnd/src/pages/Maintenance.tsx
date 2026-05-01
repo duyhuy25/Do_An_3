@@ -198,14 +198,29 @@ const Maintenance: React.FC = () => {
               <td>{m.NoiDung}</td>
               <td>{m.ChiPhi.toLocaleString("vi-VN")} đ</td>
               <td>{m.TrangThai}</td>
-              <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(m); }}>
+              <td className="actions">
+              <div className="td-actions">
+                <button
+                  className="btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEdit(m);
+                  }}
+                >
                   Sửa
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(m.BaoTriID); }}>
+
+                <button
+                  className="btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(m.BaoTriID);
+                  }}
+                >
                   Xóa
                 </button>
-              </td>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>

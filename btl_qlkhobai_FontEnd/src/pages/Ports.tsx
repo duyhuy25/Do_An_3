@@ -157,7 +157,7 @@ const Ports: React.FC = () => {
           />
 
           <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm cảng
+            + Thêm
           </button>
         </div>
       </div>
@@ -187,7 +187,8 @@ const Ports: React.FC = () => {
               <td>{p.LoaiCang}</td>
               <td>{p.TrangThai}</td>
 
-              <td>
+              <td className="actions">
+              <div className="td-actions">
                 <button
                   className="btn-edit"
                   onClick={(e) => {
@@ -207,7 +208,8 @@ const Ports: React.FC = () => {
                 >
                   Xóa
                 </button>
-              </td>
+                </div>
+            </td>
             </tr>
           ))}
         </tbody>

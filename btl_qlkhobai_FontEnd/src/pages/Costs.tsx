@@ -232,7 +232,7 @@ const Costs: React.FC = () => {
           />
 
           <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm chi phí
+            + Thêm
           </button>
         </div>
       </div>
@@ -275,7 +275,8 @@ const Costs: React.FC = () => {
                 <td>{c.SoTien.toLocaleString("vi-VN")}</td>
                 <td>{c.ThuKhachHang}</td>
 
-                <td>
+                <td className="actions">
+              <div className="td-actions">
                   <button
                     className="btn-edit"
                     onClick={(e) => {
@@ -295,7 +296,8 @@ const Costs: React.FC = () => {
                   >
                     Xóa
                   </button>
-                </td>
+                  </div>
+            </td>
               </tr>
             );
           })}

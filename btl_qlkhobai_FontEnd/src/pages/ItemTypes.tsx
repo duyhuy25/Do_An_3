@@ -146,7 +146,7 @@ const ItemTypes: React.FC = () => {
           />
 
           <button className="btn-add" onClick={handleOpenAdd}>
-            + Thêm loại hàng
+            + Thêm
           </button>
         </div>
       </div>

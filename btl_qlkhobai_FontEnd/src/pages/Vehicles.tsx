@@ -170,7 +170,9 @@ const Vehicles: React.FC = () => {
 
         <div className="toolbar">
           <input className="search" value={search} onChange={e => setSearch(e.target.value)} />
-          <button onClick={handleOpenAdd}>+ Thêm</button>
+          <button className="btn-add" onClick={handleOpenAdd}>
+            + Thêm
+          </button>
         </div>
       </div>
 
@@ -207,10 +209,12 @@ const Vehicles: React.FC = () => {
               <td>{v.TrangThai}</td>
               <td>{v.GPS || "-"}</td>
 
-              <td>
-                <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(v); }}>Sửa</button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(v.PhuongTienID); }}>Xóa</button>
-              </td>
+              <td className="actions">
+              <div className="td-actions">
+                <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(v); }}>Sửa</button>
+                <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(v.PhuongTienID); }}>Xóa</button>
+              </div>
+            </td>
             </tr>
           ))}
         </tbody>
