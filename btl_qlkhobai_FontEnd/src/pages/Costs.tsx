@@ -18,6 +18,7 @@ interface HopDongOption {
 
 interface ContainerOption {
   ContainerID: number;
+  HopDongID: number;
   formattedID: string;
 }
 
@@ -80,6 +81,7 @@ const Costs: React.FC = () => {
 
       const formatted = data.map((c: any) => ({
         ContainerID: c.ContainerID,
+        HopDongID: c.HopDongID,
         formattedID: "CTN" + c.ContainerID.toString().padStart(3, "0"),
       }));
 
@@ -261,7 +263,14 @@ const Costs: React.FC = () => {
                     ? hd.MaHopDong || `HD${hd.HopDongID}`
                     : c.HopDongID}
                 </td>
-                <td>{ct ? ct.formattedID : "-"}</td>
+                <td>
+                  {c.ContainerID && containerMap[c.ContainerID]
+                    ? containerMap[c.ContainerID].formattedID
+                    : containers
+                        .filter((ct) => ct.HopDongID === c.HopDongID)
+                        .map((ct) => ct.formattedID)
+                        .join(", ") || "-"}
+                </td>
                 <td>{c.LoaiChiPhi}</td>
                 <td>{c.SoTien.toLocaleString("vi-VN")}</td>
                 <td>{c.ThuKhachHang}</td>
@@ -319,7 +328,9 @@ const Costs: React.FC = () => {
               onChange={handleChange}
             >
               <option value="">-- Không chọn --</option>
-              {containers.map((ct) => (
+              {containers
+                .filter((ct) => !form.HopDongID || ct.HopDongID === Number(form.HopDongID))
+                .map((ct) => (
                 <option key={ct.ContainerID} value={ct.ContainerID}>
                   {ct.formattedID}
                 </option>

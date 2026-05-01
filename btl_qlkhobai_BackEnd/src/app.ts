@@ -17,6 +17,7 @@ import gpsContainersRoutes from "./routes/gpsContainersRoutes"
 import suppliersRoutes from "./routes/suppliersRoutes"
 import maintenanceRoutes from "./routes/maintenanceRoutes"
 import auditLogRoutes from "./routes/auditLogRoutes"
+import payment from "./routes/paymentRoutes"
 
 const app = express();
 
@@ -40,5 +41,7 @@ app.use("/api", gpsContainersRoutes);
 app.use("/api", suppliersRoutes);
 app.use("/api", maintenanceRoutes);
 app.use("/api", auditLogRoutes);
+app.use("/api/payment", payment);
+
 
 export default app;
