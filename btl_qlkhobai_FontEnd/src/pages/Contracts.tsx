@@ -154,16 +154,20 @@ const Contracts: React.FC = () => {
         ? `http://localhost:5000/api/contract/contract/${selected.HopDongID}`
         : `http://localhost:5000/api/contract/addcontract`;
 
-      await fetch(url, {
+      const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Lỗi lưu dữ liệu");
+
+      alert(data.message || "Thành công!");
       setShowForm(false);
       fetchContracts(search);
-    } catch {
-      alert("Lỗi lưu dữ liệu");
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 

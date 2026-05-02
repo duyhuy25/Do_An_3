@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const workflowController_1 = require("../controllers/workflowController");
+const router = (0, express_1.Router)();
+router.post("/start-packing/:containerId", workflowController_1.startPacking);
+router.post("/finish-packing/:containerId", workflowController_1.finishPacking);
+router.post("/enter-warehouse/:containerId", workflowController_1.enterWarehouse);
+router.post("/start-transport/:containerId", workflowController_1.startTransport);
+router.post("/vehicle-arrived/:containerId", workflowController_1.vehicleArrived);
+exports.default = router;

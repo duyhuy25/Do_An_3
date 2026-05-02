@@ -27,33 +27,113 @@ export const getAllContainer = async () => {
 export const createContainer = async (data: any) => {
   const pool = await poolPromise;
 
-  await pool.request()
-    .input("HopDongID", sql.Int, data.HopDongID)
-    .input("LoaiHangID", sql.Int, data.LoaiHangID)
-    .input("TrongLuong", sql.Decimal(10, 2), data.TrongLuong)
-    .input("TrangThai", sql.NVarChar, data.TrangThai || "Rỗng")
-    .input("KhoID", sql.Int, data.KhoID || null)
-    .input("PhuongTienID", sql.Int, data.PhuongTienID || null)
-    .input("MaContainer", sql.NVarChar, data.MaContainer)
-    .input("KichThuoc", sql.NVarChar, data.KichThuoc)
-    .input("LoaiContainer", sql.NVarChar, data.LoaiContainer)
-    .input("NgayDongHang", sql.Date, data.NgayDongHang || null)
-    .input("NgayMoHang", sql.Date, data.NgayMoHang || null)
-    .input("TinhTrangVo", sql.NVarChar, data.TinhTrangVo)
-    .input("NhietDoBaoQuan", sql.Float, data.NhietDoBaoQuan)
-    .input("DoAm", sql.Float, data.DoAm)
-    .query(`
-      INSERT INTO Container (
-        HopDongID, LoaiHangID, TrongLuong, TrangThai, KhoID, PhuongTienID,
-        MaContainer, KichThuoc, LoaiContainer, NgayDongHang, NgayMoHang,
-        TinhTrangVo, NhietDoBaoQuan, DoAm
-      )
-      VALUES (
-        @HopDongID, @LoaiHangID, @TrongLuong, @TrangThai, @KhoID, @PhuongTienID,
-        @MaContainer, @KichThuoc, @LoaiContainer, @NgayDongHang, @NgayMoHang,
-        @TinhTrangVo, @NhietDoBaoQuan, @DoAm
-      )
+  if (!data.PhuongTienID) {
+    const autoMaContainer = data.MaContainer ? data.MaContainer : ("CONT-" + new Date().getTime().toString().slice(-6));
+    await pool.request()
+      .input("HopDongID", sql.Int, data.HopDongID)
+      .input("LoaiHangID", sql.Int, data.LoaiHangID)
+      .input("TrongLuong", sql.Decimal(10, 2), data.TrongLuong)
+      .input("TrangThai", sql.NVarChar, data.TrangThai || "Rỗng")
+      .input("KhoID", sql.Int, data.KhoID || null)
+      .input("PhuongTienID", sql.Int, null)
+      .input("MaContainer", sql.NVarChar, autoMaContainer)
+      .input("KichThuoc", sql.NVarChar, data.KichThuoc)
+      .input("LoaiContainer", sql.NVarChar, data.LoaiContainer)
+      .input("NgayDongHang", sql.Date, data.NgayDongHang || null)
+      .input("NgayMoHang", sql.Date, data.NgayMoHang || null)
+      .input("TinhTrangVo", sql.NVarChar, data.TinhTrangVo)
+      .input("NhietDoBaoQuan", sql.Float, data.NhietDoBaoQuan)
+      .input("DoAm", sql.Float, data.DoAm)
+      .query(`
+        INSERT INTO Container (
+          HopDongID, LoaiHangID, TrongLuong, TrangThai, KhoID, PhuongTienID,
+          MaContainer, KichThuoc, LoaiContainer, NgayDongHang, NgayMoHang,
+          TinhTrangVo, NhietDoBaoQuan, DoAm
+        )
+        VALUES (
+          @HopDongID, @LoaiHangID, @TrongLuong, @TrangThai, @KhoID, @PhuongTienID,
+          @MaContainer, @KichThuoc, @LoaiContainer, @NgayDongHang, @NgayMoHang,
+          @TinhTrangVo, @NhietDoBaoQuan, @DoAm
+        )
+      `);
+    return;
+  }
+
+  const transaction = new sql.Transaction(pool);
+  await transaction.begin();
+  try {
+    const request = transaction.request();
+
+    // 1. Insert Container
+    const autoMaContainer = data.MaContainer ? data.MaContainer : ("CONT-" + new Date().getTime().toString().slice(-6));
+
+    const containerRes = await request
+      .input("HopDongID", sql.Int, data.HopDongID)
+      .input("LoaiHangID", sql.Int, data.LoaiHangID)
+      .input("TrongLuong", sql.Decimal(10, 2), data.TrongLuong)
+      .input("TrangThai", sql.NVarChar, "Đang vận chuyển")
+      .input("KhoID", sql.Int, data.KhoID || null)
+      .input("PhuongTienID", sql.Int, data.PhuongTienID)
+      .input("MaContainer", sql.NVarChar, autoMaContainer)
+      .input("KichThuoc", sql.NVarChar, data.KichThuoc)
+      .input("LoaiContainer", sql.NVarChar, data.LoaiContainer)
+      .input("NgayDongHang", sql.Date, data.NgayDongHang || null)
+      .input("NgayMoHang", sql.Date, data.NgayMoHang || null)
+      .input("TinhTrangVo", sql.NVarChar, data.TinhTrangVo)
+      .input("NhietDoBaoQuan", sql.Float, data.NhietDoBaoQuan)
+      .input("DoAm", sql.Float, data.DoAm)
+      .query(`
+        INSERT INTO Container (
+          HopDongID, LoaiHangID, TrongLuong, TrangThai, KhoID, PhuongTienID,
+          MaContainer, KichThuoc, LoaiContainer, NgayDongHang, NgayMoHang,
+          TinhTrangVo, NhietDoBaoQuan, DoAm
+        )
+        OUTPUT INSERTED.ContainerID
+        VALUES (
+          @HopDongID, @LoaiHangID, @TrongLuong, @TrangThai, @KhoID, @PhuongTienID,
+          @MaContainer, @KichThuoc, @LoaiContainer, @NgayDongHang, @NgayMoHang,
+          @TinhTrangVo, @NhietDoBaoQuan, @DoAm
+        )
+      `);
+      
+    const containerId = containerRes.recordset[0].ContainerID;
+
+    // 2. Create Trip (ChuyenDi)
+    const tripRes = await request
+      .input("MaChuyen", sql.NVarChar, "TRP-AUTO-" + new Date().getTime().toString().slice(-6))
+      .input("TrangThaiChuyenDi", sql.NVarChar, "Đang chạy")
+      .query(`
+        INSERT INTO ChuyenDi 
+        (MaChuyen, PhuongTienID, TrangThai, NgayKhoiHanh)
+        OUTPUT INSERTED.ChuyenDiID
+        VALUES 
+        (@MaChuyen, @PhuongTienID, @TrangThaiChuyenDi, GETDATE())
+      `);
+      
+    const chuyenDiId = tripRes.recordset[0].ChuyenDiID;
+
+    // 3. Update Vehicle Status
+    await request.query(`
+      UPDATE PhuongTien 
+      SET TrangThai = N'Đang chạy'
+      WHERE PhuongTienID = @PhuongTienID
     `);
+
+    // 4. Create Assignment (PhanCongContainer)
+    await request
+      .input("ContainerID_PC", sql.Int, containerId)
+      .input("ChuyenDiID_PC", sql.Int, chuyenDiId)
+      .input("TrangThaiPC", sql.NVarChar, "Đang vận chuyển")
+      .query(`
+        INSERT INTO PhanCongContainer (ContainerID, ChuyenDiID, ThoiGianPhanCong, TrangThai)
+        VALUES (@ContainerID_PC, @ChuyenDiID_PC, GETDATE(), @TrangThaiPC)
+      `);
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 };
 
 export const updateContainer = async (id: number, data: any) => {
@@ -98,10 +178,27 @@ export const updateContainer = async (id: number, data: any) => {
 
 export const deleteContainer = async (id: number) => {
   const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
+  
+  await transaction.begin();
+  try {
+    const request = transaction.request();
+    request.input("ContainerID", sql.Int, id);
 
-  await pool.request()
-    .input("ContainerID", sql.Int, id)
-    .query("DELETE FROM Container WHERE ContainerID = @ContainerID");
+    // Xóa lịch sử container
+    await request.query("DELETE FROM LichSuContainer WHERE ContainerID = @ContainerID");
+    
+    // Xóa phân công chuyến đi
+    await request.query("DELETE FROM PhanCongContainer WHERE ContainerID = @ContainerID");
+    
+    // Cuối cùng mới xóa Container
+    await request.query("DELETE FROM Container WHERE ContainerID = @ContainerID");
+
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
 };
 
 export const searchContainer = async (searchTerm = "") => {

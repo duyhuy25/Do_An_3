@@ -264,9 +264,10 @@ const AssignmentContainers: React.FC = () => {
 
             <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <option value="Chờ phân công">Chờ phân công</option>
               <option value="Đã phân công">Đã phân công</option>
               <option value="Đang vận chuyển">Đang vận chuyển</option>
-              <option value="Hoàn thành">Hoàn thành</option>
+              <option value="Hoàn tất">Hoàn tất</option>
               <option value="Hủy">Hủy</option>
             </select>
 

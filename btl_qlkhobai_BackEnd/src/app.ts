@@ -18,6 +18,7 @@ import suppliersRoutes from "./routes/suppliersRoutes"
 import maintenanceRoutes from "./routes/maintenanceRoutes"
 import auditLogRoutes from "./routes/auditLogRoutes"
 import payment from "./routes/paymentRoutes"
+import workflowRoutes from "./routes/workflowRoutes"
 
 const app = express();
 
@@ -42,6 +43,6 @@ app.use("/api", suppliersRoutes);
 app.use("/api", maintenanceRoutes);
 app.use("/api", auditLogRoutes);
 app.use("/api/payment", payment);
-
+app.use("/api/workflow", workflowRoutes);
 
 export default app;

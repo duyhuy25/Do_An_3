@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, ChangeEvent } from "react";
+import React, { useEffect, useState, useCallback, ChangeEvent, useMemo } from "react";
 import "./Pages.css";
 
 interface History {
@@ -21,6 +21,35 @@ const ContainerHistory: React.FC = () => {
   const [history, setHistory] = useState<History[]>([]);
   const [containers, setContainers] = useState<ContainerOption[]>([]);
   const [search, setSearch] = useState("");
+
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const groupedData = useMemo(() => {
+    const groups: Record<number, History[]> = {};
+    history.forEach(h => {
+      if (!groups[h.ContainerID]) groups[h.ContainerID] = [];
+      groups[h.ContainerID].push(h);
+    });
+    
+    const masterRows = Object.keys(groups).map(cId => {
+      const id = Number(cId);
+      const logs = groups[id];
+      logs.sort((a,b) => new Date(a.ThoiGian).getTime() - new Date(b.ThoiGian).getTime());
+      const latest = logs[logs.length - 1];
+      return {
+        containerId: id,
+        latestId: latest.LichSuID,
+        hoatDong: latest.HoatDong,
+        thoiGian: latest.ThoiGian,
+        viTri: latest.ViTri,
+        logs: logs
+      };
+    });
+    
+    masterRows.sort((a,b) => new Date(b.thoiGian).getTime() - new Date(a.thoiGian).getTime());
+    
+    return masterRows;
+  }, [history]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -223,57 +252,66 @@ const ContainerHistory: React.FC = () => {
         </div>
       </div>
 
-      <table>
+      <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr>
             <th>ID</th>
             <th>Container</th>
-            <th>Hành động</th>
-            <th>Thời gian</th>
-            <th>Vị trí</th>
-            <th>Trạng thái</th>
-            <th>Người cập nhật</th>
-            <th>Tác vụ</th>
+            <th>Trạng thái gần nhất</th>
+            <th>Cập nhật cuối</th>
+            <th>Vị trí hiện hành</th>
           </tr>
         </thead>
-
         <tbody>
-          {history.map((h) => (
-            <tr key={h.LichSuID} onClick={() => handleOpenEdit(h)}>
-              <td>{formatID(h.LichSuID)}</td>
-              <td>{"CTN" + h.ContainerID.toString().padStart(3, "0")}</td>
-              <td>{h.HoatDong}</td>
-              <td>{new Date(h.ThoiGian).toLocaleString("vi-VN")}</td>
-              <td>{h.ViTri || "-"}</td>
-              <td>
-                {h.TrangThaiCu} → {h.TrangThaiMoi}
-              </td>
-              <td>{h.NguoiCapNhat || "-"}</td>
-
-              <td className="actions">
-              <div className="td-actions">
-                <button
-                  className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(h);
-                  }}
-                >
-                  Sửa
-                </button>
-
-                <button
-                  className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(h.LichSuID);
-                  }}
-                >
-                  Xóa
-                </button>
-              </div>
-            </td>
-            </tr>
+          {groupedData.map(group => (
+            <React.Fragment key={group.containerId}>
+              <tr 
+                onClick={() => setExpandedId(expandedId === group.containerId ? null : group.containerId)}
+                style={{ cursor: 'pointer', background: expandedId === group.containerId ? '#f0f8ff' : 'inherit' }}
+              >
+                <td>{expandedId === group.containerId ? '▼' : '▶'} LS{group.latestId.toString().padStart(3, '0')}</td>
+                <td>{"CTN" + group.containerId.toString().padStart(3, "0")}</td>
+                <td>{group.hoatDong}</td>
+                <td>{new Date(group.thoiGian).toLocaleString('vi-VN')}</td>
+                <td>{group.viTri || '-'}</td>
+              </tr>
+              {expandedId === group.containerId && (
+                <tr className="expanded-row" style={{ background: '#f9f9f9' }}>
+                  <td colSpan={5} style={{ padding: 0 }}>
+                    <div style={{ padding: '15px' }}>
+                      <h4 style={{ textAlign: 'center', margin: '0 0 10px 0' }}>⏱ Lịch sử cập nhật: CTN{group.containerId.toString().padStart(3, '0')}</h4>
+                      <table className="sub-table" style={{ width: '100%', margin: 0, boxShadow: 'none' }}>
+                        <thead style={{ background: '#007bff', color: 'white' }}>
+                          <tr>
+                            <th>STT</th>
+                            <th>Hành động</th>
+                            <th>Thời gian</th>
+                            <th>Vị trí</th>
+                            <th>Tác vụ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.logs.map((log, index) => (
+                            <tr key={log.LichSuID} style={{ background: 'white' }}>
+                              <td>{index + 1}</td>
+                              <td>{log.HoatDong}</td>
+                              <td>{new Date(log.ThoiGian).toLocaleString('vi-VN')}</td>
+                              <td>{log.ViTri || '-'}</td>
+                              <td className="actions">
+                                <div className="td-actions">
+                                  <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(log); }}>Sửa</button>
+                                  <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(log.LichSuID); }}>Xóa</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
           ))}
         </tbody>
       </table>
@@ -294,7 +332,17 @@ const ContainerHistory: React.FC = () => {
             </select>
 
             <label>Hoạt động *</label>
-            <input name="HoatDong" value={form.HoatDong} onChange={handleChange} />
+            <select name="HoatDong" value={form.HoatDong} onChange={handleChange}>
+              <option value="">-- Chọn hoạt động --</option>
+              <option value="TẠO">Tạo</option>
+              <option value="ĐÓNG HÀNG">Đóng hàng</option>
+              <option value="NHẬP KHO">Nhập kho</option>
+              <option value="PHÂN CÔNG">Phân công</option>
+              <option value="VẬN CHUYỂN">Vận chuyển</option>
+              <option value="THEO DÕI">Theo dõi</option>
+              <option value="ĐẾN NƠI">Đến nơi</option>
+              <option value="HOÀN THÀNH">Hoàn thành</option>
+            </select>
 
             <label>Thời gian</label>
             <input

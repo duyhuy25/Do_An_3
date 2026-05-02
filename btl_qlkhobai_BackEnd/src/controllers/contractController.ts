@@ -17,10 +17,12 @@ export const getContracts = async (req: Request, res: Response) => {
   }
 };
 
+import { workflowCreateContractWithContainer } from "../services/workflowServices";
+
 export const addContract = async (req: Request, res: Response) => {
   try {
-    await addContractService(req.body);
-    res.json({ message: "Thêm hợp đồng thành công" });
+    const result = await workflowCreateContractWithContainer(req.body, "System");
+    res.json({ message: result.message + (result.warning ? " " + result.warning : "") });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Lỗi server" });

@@ -257,6 +257,7 @@ const Vehicles: React.FC = () => {
               <option>Sẵn sàng</option>
               <option>Đang chạy</option>
               <option>Bảo trì</option>
+              <option>Hỏng</option>
             </select>
 
             <label>Mô tả</label>

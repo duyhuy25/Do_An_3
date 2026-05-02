@@ -22,7 +22,7 @@ interface Container {
 
 interface LoaiHangOption { LoaiHangID: number; TenLoai: string; }
 interface KhoOption { KhoID: number; TenKho: string; }
-interface PhuongTienOption { PhuongTienID: number; BienSo: string; }
+interface PhuongTienOption { PhuongTienID: number; BienSo: string; TrangThai: string; }
 interface HopDongOption { HopDongID: number; MaHopDong?: string; }
 
 const Containers: React.FC = () => {
@@ -33,6 +33,8 @@ const Containers: React.FC = () => {
   const [phuongTiens, setPhuongTiens] = useState<PhuongTienOption[]>([]);
   const [hopDongs, setHopDongs] = useState<HopDongOption[]>([]);
 
+  const [chuyenDis, setChuyenDis] = useState<any[]>([]);
+
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +42,9 @@ const Containers: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selected, setSelected] = useState<Container | null>(null);
+
+  const [wfAction, setWfAction] = useState<{ type: string, container: Container } | null>(null);
+  const [wfForm, setWfForm] = useState({ khoId: "", chuyenDiId: "", phuongTienId: "" });
 
   const [form, setForm] = useState({
     LoaiHangID: "",
@@ -76,17 +81,19 @@ const Containers: React.FC = () => {
 
   const fetchOptions = useCallback(async () => {
     try {
-      const [lh, k, pt, hd] = await Promise.all([
+      const [lh, k, pt, hd, cd] = await Promise.all([
         fetch("http://localhost:5000/api/itemtype/itemtype").then(res => res.json()),
         fetch("http://localhost:5000/api/warehouse/warehouse").then(res => res.json()),
         fetch("http://localhost:5000/api/vehicle/vehicle").then(res => res.json()),
-        fetch("http://localhost:5000/api/contract/contract").then(res => res.json())
+        fetch("http://localhost:5000/api/contract/contract").then(res => res.json()),
+        fetch("http://localhost:5000/api/trip/trip").then(res => res.json())
       ]);
 
       setLoaiHangs(lh);
       setKhos(k);
       setPhuongTiens(pt);
       setHopDongs(hd);
+      setChuyenDis(cd);
 
     } catch (err) {
       console.error(err);
@@ -106,6 +113,27 @@ const Containers: React.FC = () => {
   }, [fetchOptions]);
 
   const formatID = (id: number) => "CTN" + id.toString().padStart(3, "0");
+
+  const executeWorkflow = async (url: string, payload: any = {}) => {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, nguoiCapNhat: "Quản lý" })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Lỗi xử lý");
+      alert(data.message || "Thành công!");
+      fetchContainers(search);
+      setWfAction(null);
+    } catch (err: any) {
+      alert("Lỗi: " + err.message);
+    }
+  };
+
+  const handleSimpleWorkflow = (action: string, id: number) => {
+    executeWorkflow(`http://localhost:5000/api/workflow/${action}/${id}`);
+  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -236,7 +264,7 @@ const Containers: React.FC = () => {
       </div>
 
       <table>
-      <thead>
+        <thead>
           <tr>
             <th>ID</th>
             <th>Mã</th>
@@ -253,6 +281,7 @@ const Containers: React.FC = () => {
             <th>Tình trạng vỏ</th>
             <th>Nhiệt độ</th>
             <th>Độ ẩm</th>
+            <th>Điều phối</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
@@ -284,8 +313,8 @@ const Containers: React.FC = () => {
                 {hopDongs.find(h => h.HopDongID === c.HopDongID)?.MaHopDong || c.HopDongID}
               </td>
 
-              <td>{c.NgayDongHang ? c.NgayDongHang.slice(0,10) : "-"}</td>
-              <td>{c.NgayMoHang ? c.NgayMoHang.slice(0,10) : "-"}</td>
+              <td>{c.NgayDongHang ? c.NgayDongHang.slice(0, 10) : "-"}</td>
+              <td>{c.NgayMoHang ? c.NgayMoHang.slice(0, 10) : "-"}</td>
 
               <td>{c.TinhTrangVo || "-"}</td>
 
@@ -293,28 +322,59 @@ const Containers: React.FC = () => {
               <td>{c.DoAm ?? "-"}</td>
 
               <td className="actions">
-              <div className="td-actions">
-                <button
-                  className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(c);
-                  }}
-                >
-                  Sửa
-                </button>
+                <div className="td-actions" style={{ flexDirection: 'column', gap: '5px' }}>
+                  {c.TrangThai === "Rỗng" && (
+                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("start-packing", c.ContainerID); }}>Bắt đầu đóng hàng</button>
+                  )}
+                  {c.TrangThai === "Đang đóng hàng" && (
+                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("finish-packing", c.ContainerID); }}>Hoàn tất đóng hàng</button>
+                  )}
+                  {c.TrangThai === "Đã đóng hàng" && (
+                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setWfAction({ type: "enter-warehouse", container: c }); setWfForm({ ...wfForm, khoId: "" }); }}>Nhập kho</button>
+                  )}
+                  {(c.TrangThai === "Trong kho" || c.TrangThai === "Đã đóng hàng") && (
+                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setWfAction({ type: "start-transport", container: c }); setWfForm({ ...wfForm, chuyenDiId: "", phuongTienId: "" }); }}>Vận chuyển</button>
+                  )}
+                  {c.TrangThai === "Đang vận chuyển" && (
+                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("vehicle-arrived", c.ContainerID); }}>Đã đến nơi</button>
+                  )}
+                  {c.TrangThai === "Đã đến nơi" && (
+                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("deliver-container", c.ContainerID); }}>Đã giao</button>
+                  )}
+                  {c.TrangThai !== "Đã giao" && c.TrangThai !== "Hủy" && (
+                    <button className="btn-delete" onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if(window.confirm('Bạn có chắc chắn muốn hủy đơn (Container) này không?')) {
+                        handleSimpleWorkflow("cancel-container", c.ContainerID);
+                      }
+                    }}>Hủy đơn</button>
+                  )}
+                </div>
+              </td>
 
-                <button
-                  className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(c.ContainerID);
-                  }}
-                >
-                  Xóa
-                </button>
-              </div>
-            </td>
+              <td className="actions">
+                <div className="td-actions">
+                  <button
+                    className="btn-edit"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEdit(c);
+                    }}
+                  >
+                    Sửa
+                  </button>
+
+                  <button
+                    className="btn-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(c.ContainerID);
+                    }}
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -368,7 +428,7 @@ const Containers: React.FC = () => {
                 <option value="">-- Chọn phương tiện --</option>
                 {phuongTiens.map(p => (
                   <option key={p.PhuongTienID} value={p.PhuongTienID}>
-                    {p.BienSo}
+                    {p.BienSo} - {p.TrangThai}
                   </option>
                 ))}
               </select>
@@ -376,10 +436,15 @@ const Containers: React.FC = () => {
 
             <div className="form-group">
               <label>Trạng thái</label>
-              <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
+              <select name="TrangThai" value={form.TrangThai} onChange={handleChange} disabled={isEdit}>
                 <option value="Rỗng">Rỗng</option>
-                <option value="Đang sử dụng">Đang sử dụng</option>
+                <option value="Đang đóng hàng">Đang đóng hàng</option>
+                <option value="Đã đóng hàng">Đã đóng hàng</option>
+                <option value="Trong kho">Trong kho</option>
+                <option value="Đã phân công">Đã phân công</option>
                 <option value="Đang vận chuyển">Đang vận chuyển</option>
+                <option value="Đã đến nơi">Đã đến nơi</option>
+                <option value="Đã giao">Đã giao</option>
               </select>
             </div>
 
@@ -441,6 +506,66 @@ const Containers: React.FC = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {wfAction && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Điều phối Container {formatID(wfAction.container.ContainerID)}</h3>
+
+            {wfAction.type === "enter-warehouse" && (
+              <>
+                <label>Chọn kho lưu trữ *</label>
+                <select value={wfForm.khoId} onChange={(e) => setWfForm({ ...wfForm, khoId: e.target.value })}>
+                  <option value="">-- Chọn kho --</option>
+                  {khos.filter(k => k.TenKho).map(k => (
+                    <option key={k.KhoID} value={k.KhoID}>{k.TenKho}</option>
+                  ))}
+                </select>
+              </>
+            )}
+
+            {wfAction.type === "start-transport" && (
+              <>
+                <label>Chọn chuyến đi *</label>
+                <select value={wfForm.chuyenDiId} onChange={(e) => setWfForm({ ...wfForm, chuyenDiId: e.target.value })}>
+                  <option value="">-- Chọn chuyến đi --</option>
+                  {chuyenDis.filter(cd => cd.TrangThai !== "Hoàn thành" && cd.TrangThai !== "Hủy" && cd.TrangThai !== "Đang chạy").map(cd => (
+                    <option key={cd.ChuyenDiID} value={cd.ChuyenDiID}>{cd.MaChuyen} - {cd.TrangThai}</option>
+                  ))}
+                </select>
+
+                <label>Chọn phương tiện *</label>
+                <select value={wfForm.phuongTienId} onChange={(e) => setWfForm({ ...wfForm, phuongTienId: e.target.value })}>
+                  <option value="">-- Chọn phương tiện --</option>
+                  {phuongTiens.filter(pt => pt.TrangThai === "Sẵn sàng").map(pt => (
+                    <option key={pt.PhuongTienID} value={pt.PhuongTienID}>{pt.BienSo} - {pt.TrangThai}</option>
+                  ))}
+                </select>
+              </>
+            )}
+
+            <div className="modal-actions">
+              <button className="btn-submit" onClick={() => {
+                const url = `http://localhost:5000/api/workflow/${wfAction.type}/${wfAction.container.ContainerID}`;
+                let payload: any = {};
+                if (wfAction.type === "enter-warehouse") {
+                  if (!wfForm.khoId) return alert("Vui lòng chọn kho!");
+                  payload = { khoId: Number(wfForm.khoId) };
+                } else if (wfAction.type === "start-transport") {
+                  if (!wfForm.chuyenDiId || !wfForm.phuongTienId) return alert("Vui lòng chọn chuyến đi và phương tiện!");
+                  payload = {
+                    chuyenDiId: Number(wfForm.chuyenDiId),
+                    phuongTienId: Number(wfForm.phuongTienId),
+                    khoIdCu: wfAction.container.KhoID
+                  };
+                }
+                executeWorkflow(url, payload);
+              }}>Xác nhận</button>
+              <button className="btn-cancel" onClick={() => setWfAction(null)}>Hủy</button>
+            </div>
           </div>
         </div>
       )}

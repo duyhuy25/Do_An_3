@@ -275,7 +275,7 @@ const Warehouses: React.FC = () => {
             <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option value="Hoạt động">Hoạt động</option>
-              <option value="Tạm dừng">Tạm dừng</option>
+              <option value="Đầy">Đầy</option>
               <option value="Bảo trì">Bảo trì</option>
             </select>
 

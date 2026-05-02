@@ -96,7 +96,7 @@ const Trips: React.FC = () => {
     return () => clearTimeout(t);
   }, [search, fetchTrips]);
 
-  const formatID = (id: number) => "TRP" + id.toString().padStart(3, "0");
+  const formatID = (id: number) => "CD" + id.toString().padStart(3, "0");
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -308,6 +308,7 @@ const Trips: React.FC = () => {
             <label>Trạng thái</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option>Chuẩn bị</option>
+              <option>Đã phân công</option>
               <option>Đang chạy</option>
               <option>Hoàn thành</option>
               <option>Hủy</option>
