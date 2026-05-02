@@ -318,9 +318,13 @@ const ContainerHistory: React.FC = () => {
 
             <div className="modal-actions">
               <button className="btn-submit" onClick={handleSubmit}>
-                Lưu
+                {isEdit ? "Cập nhật" : "Thêm"}
               </button>
-              <button className="btn-cancel" onClick={() => setShowForm(false)}>
+
+              <button
+                className="btn-cancel"
+                onClick={() => setShowForm(false)}
+              >
                 Hủy
               </button>
             </div>

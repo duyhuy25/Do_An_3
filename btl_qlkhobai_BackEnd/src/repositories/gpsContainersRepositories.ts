@@ -16,7 +16,7 @@ export const createGpsContainer = async (data: any) => {
     .input("ViDo", data.ViDo)
     .input("KinhDo", data.KinhDo)
     .input("TocDo", data.TocDo)
-    .input("ThoiGian", data.ThoiGian)
+    .input("ThoiGian", data.ThoiGian ? new Date(data.ThoiGian) : null)
     .query(`
       INSERT INTO GPS_Container (ContainerID, ViDo, KinhDo, TocDo, ThoiGian)
       VALUES (@ContainerID, @ViDo, @KinhDo, @TocDo, @ThoiGian)
@@ -31,7 +31,7 @@ export const updateGpsContainerById = async (id: number, data: any) => {
     .input("ViDo", data.ViDo)
     .input("KinhDo", data.KinhDo)
     .input("TocDo", data.TocDo)
-    .input("ThoiGian", data.ThoiGian)
+    .input("ThoiGian", data.ThoiGian ? new Date(data.ThoiGian) : null)
     .query(`
       UPDATE GPS_Container SET
         ContainerID = @ContainerID,

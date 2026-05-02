@@ -429,8 +429,16 @@ const Containers: React.FC = () => {
             </div>
 
             <div className="modal-actions">
-              <button className="btn-submit" onClick={handleSubmit}>Lưu</button>
-              <button className="btn-cancel" onClick={()=>setShowForm(false)}>Hủy</button>
+              <button className="btn-submit" onClick={handleSubmit}>
+                {isEdit ? "Cập nhật" : "Thêm"}
+              </button>
+
+              <button
+                className="btn-cancel"
+                onClick={() => setShowForm(false)}
+              >
+                Hủy
+              </button>
             </div>
 
           </div>

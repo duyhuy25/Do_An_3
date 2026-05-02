@@ -14,7 +14,7 @@ export const createAssignmentContainer = async (data: any) => {
   await pool.request()
     .input("ContainerID", data.ContainerID)
     .input("ChuyenDiID", data.ChuyenDiID)
-    .input("ThoiGianPhanCong", data.ThoiGianPhanCong)
+    .input("ThoiGianPhanCong", data.ThoiGianPhanCong ? new Date(data.ThoiGianPhanCong) : null)
     .input("TrangThai", data.TrangThai)
     .query(`
       INSERT INTO PhanCongContainer (ContainerID, ChuyenDiID, ThoiGianPhanCong, TrangThai)
@@ -28,7 +28,7 @@ export const updateAssignmentContainerById = async (id: number, data: any) => {
     .input("ID", id)
     .input("ContainerID", data.ContainerID)
     .input("ChuyenDiID", data.ChuyenDiID)
-    .input("ThoiGianPhanCong", data.ThoiGianPhanCong)
+    .input("ThoiGianPhanCong", data.ThoiGianPhanCong ? new Date(data.ThoiGianPhanCong) : null)
     .input("TrangThai", data.TrangThai)
     .query(`
       UPDATE PhanCongContainer SET

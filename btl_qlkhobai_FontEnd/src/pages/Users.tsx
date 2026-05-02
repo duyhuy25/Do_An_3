@@ -346,8 +346,16 @@ const Users: React.FC = () => {
             </select>
 
             <div className="modal-actions">
-              <button onClick={handleSubmit}>Lưu</button>
-              <button onClick={() => setShowForm(false)}>Hủy</button>
+              <button className="btn-submit" onClick={handleSubmit}>
+                {isEdit ? "Cập nhật" : "Thêm"}
+              </button>
+
+              <button
+                className="btn-cancel"
+                onClick={() => setShowForm(false)}
+              >
+                Hủy
+              </button>
             </div>
           </div>
         </div>
