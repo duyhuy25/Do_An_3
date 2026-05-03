@@ -70,7 +70,6 @@ const ContainerHistory: React.FC = () => {
 
   const fetchHistory = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
 
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/history/containerhistory/search?search=${encodeURIComponent(searchTerm)}`
@@ -88,8 +87,6 @@ const ContainerHistory: React.FC = () => {
       setHistory(clean);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -110,8 +107,8 @@ const ContainerHistory: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchHistory();
-    fetchContainers();
+    setLoading(true);
+    Promise.all([fetchHistory(), fetchContainers()]).finally(() => setLoading(false));
   }, [fetchHistory, fetchContainers]);
 
   useEffect(() => {
@@ -229,11 +226,11 @@ const ContainerHistory: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
+      {loading && <div className="loading">Đang tải...</div>}
       <div className="header">
         <h2>📜 Lịch sử Container</h2>
 

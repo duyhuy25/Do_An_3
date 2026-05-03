@@ -45,8 +45,6 @@ const Costs: React.FC = () => {
 
   const fetchCosts = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
-
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/cost/cost/search?search=${encodeURIComponent(searchTerm)}`
         : "http://localhost:5000/api/cost/cost";
@@ -59,8 +57,6 @@ const Costs: React.FC = () => {
     } catch (err: any) {
       setError(err.message || "Không thể tải chi phí");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -92,9 +88,8 @@ const Costs: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchCosts();
-    fetchHopDongs();
-    fetchContainers();
+    setLoading(true);
+    Promise.all([fetchCosts(), fetchHopDongs(), fetchContainers()]).finally(() => setLoading(false));
   }, [fetchCosts, fetchHopDongs, fetchContainers]);
 
   useEffect(() => {
@@ -174,8 +169,9 @@ const Costs: React.FC = () => {
     };
 
     try {
+      let res: Response;
       if (isEdit && selected) {
-        await fetch(
+        res = await fetch(
           `http://localhost:5000/api/cost/cost/${selected.ChiPhiID}`,
           {
             method: "PUT",
@@ -184,12 +180,14 @@ const Costs: React.FC = () => {
           }
         );
       } else {
-        await fetch("http://localhost:5000/api/cost/addcost", {
+        res = await fetch("http://localhost:5000/api/cost/addcost", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
       }
+
+      if (!res.ok) throw new Error("Lỗi server");
 
       setShowForm(false);
       fetchCosts(search);
@@ -203,9 +201,11 @@ const Costs: React.FC = () => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
-      await fetch(`http://localhost:5000/api/cost/cost/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/cost/cost/${id}`, {
         method: "DELETE",
       });
+
+      if (!res.ok) throw new Error();
 
       fetchCosts(search);
     } catch (err) {
@@ -214,11 +214,11 @@ const Costs: React.FC = () => {
     }
   };
 
-  {loading && <div className="loading">Đang tải dữ liệu...</div>}
-  {error && <div className="error">Lỗi: {error}</div>}
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
+      {loading && <div className="loading">Đang tải dữ liệu...</div>}
       <div className="header">
         <h2>💰 Danh sách chi phí</h2>
 
@@ -276,28 +276,28 @@ const Costs: React.FC = () => {
                 <td>{c.ThuKhachHang}</td>
 
                 <td className="actions">
-              <div className="td-actions">
-                  <button
-                    className="btn-edit"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEdit(c);
-                    }}
-                  >
-                    Sửa
-                  </button>
+                  <div className="td-actions">
+                    <button
+                      className="btn-edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(c);
+                      }}
+                    >
+                      Sửa
+                    </button>
 
-                  <button
-                    className="btn-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(c.ChiPhiID);
-                    }}
-                  >
-                    Xóa
-                  </button>
+                    <button
+                      className="btn-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(c.ChiPhiID);
+                      }}
+                    >
+                      Xóa
+                    </button>
                   </div>
-            </td>
+                </td>
               </tr>
             );
           })}

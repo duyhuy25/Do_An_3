@@ -29,8 +29,6 @@ const Customers: React.FC = () => {
 
   const fetchCustomers = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
-
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/customer/customer/search?search=${encodeURIComponent(searchTerm)}`
         : "http://localhost:5000/api/customer/customer";
@@ -43,13 +41,12 @@ const Customers: React.FC = () => {
     } catch (err: any) {
       setError(err.message || "Không thể tải khách hàng");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchCustomers();
+    setLoading(true);
+    fetchCustomers().finally(() => setLoading(false));
   }, [fetchCustomers]);
 
   useEffect(() => {
@@ -107,8 +104,9 @@ const Customers: React.FC = () => {
     const body = { ...form };
 
     try {
+      let res: Response;
       if (isEdit && selected) {
-        await fetch(
+        res = await fetch(
           `http://localhost:5000/api/customer/customer/${selected.KhachHangID}`,
           {
             method: "PUT",
@@ -117,12 +115,14 @@ const Customers: React.FC = () => {
           }
         );
       } else {
-        await fetch("http://localhost:5000/api/customer/addcustomer", {
+        res = await fetch("http://localhost:5000/api/customer/addcustomer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
       }
+
+      if (!res.ok) throw new Error("Lỗi server");
 
       setShowForm(false);
       fetchCustomers(search);
@@ -136,9 +136,11 @@ const Customers: React.FC = () => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
-      await fetch(`http://localhost:5000/api/customer/customer/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/customer/customer/${id}`, {
         method: "DELETE",
       });
+
+      if (!res.ok) throw new Error();
 
       fetchCustomers(search);
     } catch (err) {
@@ -147,11 +149,11 @@ const Customers: React.FC = () => {
     }
   };
 
-  {loading && <div className="loading">Đang tải dữ liệu...</div>}
-  {error && <div className="error">Lỗi: {error}</div>}
+  if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
+      {loading && <div className="loading">Đang tải dữ liệu...</div>}
       <div className="header">
         <h2>👥 Danh sách khách hàng</h2>
 
@@ -192,28 +194,28 @@ const Customers: React.FC = () => {
               <td>{c.Email || "-"}</td>
 
               <td className="actions">
-              <div className="td-actions">
-                <button
-                  className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(c);
-                  }}
-                >
-                  Sửa
-                </button>
+                <div className="td-actions">
+                  <button
+                    className="btn-edit"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEdit(c);
+                    }}
+                  >
+                    Sửa
+                  </button>
 
-                <button
-                  className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(c.KhachHangID);
-                  }}
-                >
-                  Xóa
-                </button>
+                  <button
+                    className="btn-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(c.KhachHangID);
+                    }}
+                  >
+                    Xóa
+                  </button>
                 </div>
-            </td>
+              </td>
             </tr>
           ))}
         </tbody>

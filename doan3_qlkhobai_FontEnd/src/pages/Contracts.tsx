@@ -50,8 +50,6 @@ const Contracts: React.FC = () => {
 
   const fetchContracts = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
-
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/contract/contract/search?search=${encodeURIComponent(searchTerm)}`
         : "http://localhost:5000/api/contract/contract";
@@ -63,8 +61,6 @@ const Contracts: React.FC = () => {
       setContracts(data);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -75,8 +71,8 @@ const Contracts: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchContracts();
-    fetchKH();
+    setLoading(true);
+    Promise.all([fetchContracts(), fetchKH()]).finally(() => setLoading(false));
   }, [fetchContracts, fetchKH]);
 
   useEffect(() => {
@@ -181,11 +177,11 @@ const Contracts: React.FC = () => {
     fetchContracts(search);
   };
 
-  if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">{error}</div>;
 
   return (
     <div>
+      {loading && <div className="loading">Đang tải...</div>}
       <div className="header">
         <h2>📄 Hợp đồng</h2>
 

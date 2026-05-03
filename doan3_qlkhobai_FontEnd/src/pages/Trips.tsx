@@ -60,7 +60,6 @@ const Trips: React.FC = () => {
 
   const fetchTrips = useCallback(async (searchTerm = "") => {
     try {
-      setLoading(true);
 
       const url = searchTerm
         ? `http://localhost:5000/api/trip/trip/search?search=${encodeURIComponent(searchTerm)}`
@@ -71,8 +70,6 @@ const Trips: React.FC = () => {
       setTrips(data);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -87,8 +84,8 @@ const Trips: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchTrips();
-    fetchOptions();
+    setLoading(true);
+    Promise.all([fetchTrips(), fetchOptions()]).finally(() => setLoading(false));
   }, [fetchTrips, fetchOptions]);
 
   useEffect(() => {
@@ -187,12 +184,12 @@ const Trips: React.FC = () => {
     fetchTrips(search);
   };
 
-  if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">{error}</div>;
 
   // ================= UI =================
   return (
     <div>
+      {loading && <div className="loading">Đang tải...</div>}
       <div className="header">
         <h2>🚢 Chuyến đi</h2>
 

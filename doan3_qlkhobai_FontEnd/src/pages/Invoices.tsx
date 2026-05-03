@@ -75,8 +75,6 @@ const Invoices: React.FC = () => {
 
   const fetchInvoices = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
-
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/invoice/invoice/search?search=${encodeURIComponent(searchTerm)}`
         : "http://localhost:5000/api/invoice/invoice";
@@ -90,8 +88,6 @@ const Invoices: React.FC = () => {
     } catch (err: any) {
       setError(err.message || "Không thể tải hóa đơn");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -106,8 +102,8 @@ const Invoices: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchInvoices();
-    fetchHopDongs();
+    setLoading(true);
+    Promise.all([fetchInvoices(), fetchHopDongs()]).finally(() => setLoading(false));
   }, [fetchInvoices, fetchHopDongs]);
 
   useEffect(() => {
@@ -323,11 +319,11 @@ const Invoices: React.FC = () => {
     return { list, totalPaid, remain, percent };
   };
 
-  {loading && <div className="loading">Đang tải...</div>}
   if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
+      {loading && <div className="loading">Đang tải...</div>}
       <div className="header">
         <h2>🧾 Quản lý hóa đơn</h2>
 

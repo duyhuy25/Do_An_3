@@ -44,7 +44,6 @@ const Vehicles: React.FC = () => {
   // FETCH
   const fetchVehicles = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
 
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/vehicle/vehicle/search?search=${encodeURIComponent(searchTerm)}`
@@ -57,12 +56,13 @@ const Vehicles: React.FC = () => {
       setVehicles(data);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
+  useEffect(() => {
+    setLoading(true);
+    fetchVehicles().finally(() => setLoading(false));
+  }, [fetchVehicles]);
 
   useEffect(() => {
     const t = setTimeout(() => fetchVehicles(search), 400);
@@ -160,11 +160,11 @@ const Vehicles: React.FC = () => {
     fetchVehicles(search);
   };
 
-  if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">{error}</div>;
 
   return (
     <div>
+      {loading && <div className="loading">Đang tải...</div>}
       <div className="header">
         <h2>🚚 Phương tiện</h2>
 

@@ -37,7 +37,6 @@ const Warehouses: React.FC = () => {
 
   const fetchWarehouses = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
 
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/warehouse/warehouse/search?search=${encodeURIComponent(searchTerm)}`
@@ -50,13 +49,12 @@ const Warehouses: React.FC = () => {
       setWarehouses(data);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchWarehouses();
+    setLoading(true);
+    fetchWarehouses().finally(() => setLoading(false));
   }, [fetchWarehouses]);
 
   useEffect(() => {
@@ -176,11 +174,11 @@ const Warehouses: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">Lỗi: {error}</div>;
 
   return (
     <div>
+      {loading && <div className="loading">Đang tải...</div>}
       <div className="header">
         <h2>🏭 Danh sách kho</h2>
 

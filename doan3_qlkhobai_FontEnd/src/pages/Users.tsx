@@ -54,7 +54,6 @@ const Users: React.FC = () => {
 
   const fetchUsers = useCallback(async (searchTerm: string = "") => {
     try {
-      setLoading(true);
 
       const url = searchTerm.trim()
         ? `http://localhost:5000/api/user/user/search?search=${encodeURIComponent(searchTerm)}`
@@ -67,8 +66,6 @@ const Users: React.FC = () => {
       setUsers(data);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -83,8 +80,8 @@ const Users: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
-    fetchRoles();
+    setLoading(true);
+    Promise.all([fetchUsers(), fetchRoles()]).finally(() => setLoading(false));
   }, [fetchUsers, fetchRoles]);
 
   useEffect(() => {
@@ -208,11 +205,11 @@ const Users: React.FC = () => {
     fetchUsers(search);
   };
 
-  if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">{error}</div>;
 
   return (
     <div>
+      {loading && <div className="loading">Đang tải...</div>}
       <div className="header">
         <h2>👤 Người dùng</h2>
 
