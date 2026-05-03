@@ -5,6 +5,7 @@ import {
   deleteContractById,
   searchContractByKeyword
 } from "../repositories/contractRepositories";
+import { recalculateInvoiceTotal } from "../repositories/invoiceRepositories";
 
 export const fetchContract = async () => {
   return await getAllContract();
@@ -15,7 +16,9 @@ export const addContractService = async (data: any) => {
 };
 
 export const updateContractService = async (id: number, data: any) => {
-  return await updateContractById(id, data);
+  const result = await updateContractById(id, data);
+  await recalculateInvoiceTotal(id);
+  return result;
 };
 
 export const deleteContractService = async (id: number) => {

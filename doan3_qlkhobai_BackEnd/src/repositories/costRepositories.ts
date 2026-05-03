@@ -117,3 +117,11 @@ export const searchCostByKeyword = async (searchTerm = "") => {
   const result = await request.query(query);
   return result.recordset;
 };
+
+export const getCostById = async (id: number) => {
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input("ChiPhiID", sql.Int, id)
+    .query("SELECT * FROM ChiPhi WHERE ChiPhiID = @ChiPhiID");
+  return result.recordset[0];
+};

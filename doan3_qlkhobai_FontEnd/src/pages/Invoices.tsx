@@ -516,13 +516,13 @@ const Invoices: React.FC = () => {
             <input type="datetime-local" name="ThoiGian" value={paymentForm.ThoiGian} onChange={handlePaymentChange} />
 
             <div className="modal-actions">
-              <button className="btn-submit" onClick={handleSubmit}>
+              <button className="btn-submit" onClick={handleSubmitPayment}>
                 {isEdit ? "Cập nhật" : "Thêm"}
               </button>
 
               <button
                 className="btn-cancel"
-                onClick={() => setShowForm(false)}
+                onClick={() => setShowAddPaymentModal(false)}
               >
                 Hủy
               </button>

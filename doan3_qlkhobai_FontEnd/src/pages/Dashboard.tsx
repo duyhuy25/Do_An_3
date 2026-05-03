@@ -15,8 +15,13 @@ interface Cost {
 
 const Dashboard: React.FC = () => {
 
-  const [tongDoanhThu, setTongDoanhThu] = useState(0);
-  const [tongChiPhi, setTongChiPhi] = useState(0);
+  const [revenueToday, setRevenueToday] = useState(0);
+  const [costToday, setCostToday] = useState(0);
+  const [contractsToday, setContractsToday] = useState(0);
+
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalCost, setTotalCost] = useState(0);
+  const [totalInternalCost, setTotalInternalCost] = useState(0);
 
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [yearlyData, setYearlyData] = useState<any[]>([]);
@@ -26,23 +31,50 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
 
     const fetchData = async () => {
+      const todayStr = new Date().toISOString().split('T')[0];
 
       const invoices: Invoice[] = await fetch("http://localhost:5000/api/invoice/invoice")
         .then(res => res.json());
 
-      const costs: Cost[] = await fetch("http://localhost:5000/api/cost/cost")
+      const costs: any[] = await fetch("http://localhost:5000/api/cost/cost")
         .then(res => res.json());
 
-      const totalRevenue = invoices.reduce((sum, i) => sum + i.SoTien, 0);
-      const totalCost = costs.reduce((sum, c) => sum + c.SoTien, 0);
+      const contracts: any[] = await fetch("http://localhost:5000/api/contract/contract")
+        .then(res => res.json());
 
-      setTongDoanhThu(totalRevenue);
-      setTongChiPhi(totalCost);
+      // Today Stats
+      const revToday = invoices
+        .filter(i => i.NgayLap && i.NgayLap.split('T')[0] === todayStr)
+        .reduce((sum, i) => sum + i.SoTien, 0);
+
+      const cToday = costs
+        .filter(c => c.NgayPhatSinh && c.NgayPhatSinh.split('T')[0] === todayStr)
+        .reduce((sum, c) => sum + c.SoTien, 0);
+
+      const contToday = contracts
+        .filter(h => h.NgayKy && h.NgayKy.split('T')[0] === todayStr)
+        .length;
+
+      // All Time Stats
+      const totalRev = invoices.reduce((sum, i) => sum + i.SoTien, 0);
+      const totalC = costs.reduce((sum, c) => sum + c.SoTien, 0);
+      const internalC = costs
+        .filter(c => c.ThuKhachHang === "Không")
+        .reduce((sum, c) => sum + c.SoTien, 0);
+
+      setRevenueToday(revToday);
+      setCostToday(cToday);
+      setContractsToday(contToday);
+      
+      setTotalRevenue(totalRev);
+      setTotalCost(totalC);
+      setTotalInternalCost(internalC);
 
       const monthMap: any = {};
       const yearMap: any = {};
 
       invoices.forEach(i => {
+        if (!i.NgayLap) return;
         const date = new Date(i.NgayLap);
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
@@ -74,8 +106,6 @@ const Dashboard: React.FC = () => {
 
   }, []);
 
-  const loiNhuan = tongDoanhThu - tongChiPhi;
-
   const filteredMonth = monthlyData.filter(m =>
     yearFilter === "all" ? true : m.thang.startsWith(yearFilter)
   );
@@ -87,23 +117,40 @@ const Dashboard: React.FC = () => {
         <h2>📊 Báo cáo thống kê</h2>
       </div>
 
-      <div className="dashboard">
-
+      <h3 style={{ marginBottom: "15px" }}>📅 Thống kê hôm nay</h3>
+      <div className="dashboard" style={{ marginBottom: "30px" }}>
         <div className="card">
-          <h4>💰 Tổng doanh thu</h4>
-          <p>{tongDoanhThu.toLocaleString()} VNĐ</p>
+          <h4>💰 Doanh thu hôm nay</h4>
+          <p>{revenueToday.toLocaleString()} VNĐ</p>
         </div>
 
         <div className="card">
-          <h4>💸 Tổng chi phí</h4>
-          <p>{tongChiPhi.toLocaleString()} VNĐ</p>
+          <h4>💸 Chi phí hôm nay</h4>
+          <p>{costToday.toLocaleString()} VNĐ</p>
         </div>
 
         <div className="card">
-          <h4>📈 Lợi nhuận</h4>
-          <p>{loiNhuan.toLocaleString()} VNĐ</p>
+          <h4>📄 Hợp đồng mới</h4>
+          <p>{contractsToday} Hợp đồng</p>
+        </div>
+      </div>
+
+      <h3 style={{ marginBottom: "15px" }}>🌍 Thống kê tổng thể</h3>
+      <div className="dashboard" style={{ marginBottom: "30px" }}>
+        <div className="card">
+          <h4>📊 Tổng doanh thu</h4>
+          <p>{totalRevenue.toLocaleString()} VNĐ</p>
         </div>
 
+        <div className="card">
+          <h4>📉 Tổng chi phí</h4>
+          <p>{totalCost.toLocaleString()} VNĐ</p>
+        </div>
+
+        <div className="card">
+          <h4>🏢 Chi phí nội bộ (Không thu KH)</h4>
+          <p style={{ color: "#e74c3c" }}>{totalInternalCost.toLocaleString()} VNĐ</p>
+        </div>
       </div>
 
       <div style={{ margin: "20px 0" }}>

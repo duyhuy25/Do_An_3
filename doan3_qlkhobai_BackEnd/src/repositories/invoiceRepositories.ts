@@ -111,3 +111,28 @@ export const searchInvoiceByKeyword = async (searchTerm = "") => {
   const result = await request.query(query);
   return result.recordset;
 };
+
+export const recalculateInvoiceTotal = async (hopDongId: number) => {
+  const pool = await poolPromise;
+  
+  // Tính tổng tiền = Giá trị hợp đồng + Tổng chi phí (thu khách hàng = Có)
+  await pool.request()
+    .input("HopDongID", sql.Int, hopDongId)
+    .query(`
+      DECLARE @TotalCost DECIMAL(15, 2);
+      DECLARE @ContractValue DECIMAL(15, 2);
+      
+      SELECT @TotalCost = ISNULL(SUM(SoTien), 0) 
+      FROM ChiPhi 
+      WHERE HopDongID = @HopDongID AND ThuKhachHang = N'Có';
+      
+      SELECT @ContractValue = ISNULL(GiaTri, 0) 
+      FROM HopDong 
+      WHERE HopDongID = @HopDongID;
+      
+      UPDATE TOP (1) HoaDon
+      SET SoTien = @ContractValue + @TotalCost
+      WHERE HopDongID = @HopDongID
+      AND TrangThai != N'Đã thanh toán';
+    `);
+};
