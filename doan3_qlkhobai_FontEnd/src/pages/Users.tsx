@@ -34,6 +34,8 @@ const Users: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selected, setSelected] = useState<User | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<{ [key: number]: boolean }>({});
 
   const [form, setForm] = useState({
     Username: "",
@@ -49,8 +51,6 @@ const Users: React.FC = () => {
     GioiTinh: "Nam",
     Avatar: ""
   });
-
-  const [showPassword, setShowPassword] = useState(false);
 
   const fetchUsers = useCallback(async (searchTerm: string = "") => {
     try {
@@ -125,7 +125,7 @@ const Users: React.FC = () => {
 
     setForm({
       Username: u.Username,
-      PasswordHash: "",
+      PasswordHash: u.PasswordHash || "",
       HoTen: u.HoTen || "",
       Email: u.Email || "",
       TrangThai: u.TrangThai || "Hoạt động",
@@ -140,6 +140,17 @@ const Users: React.FC = () => {
 
     setShowPassword(false);
     setShowForm(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm({ ...form, Avatar: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async () => {
@@ -219,6 +230,7 @@ const Users: React.FC = () => {
             placeholder="🔍 Tìm..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            autoComplete="off"
           />
 
           <button className="btn-add" onClick={handleOpenAdd}>
@@ -237,6 +249,7 @@ const Users: React.FC = () => {
             <th>Email</th>
             <th>SĐT</th>
             <th>Vai trò</th>
+            <th>Mật khẩu</th>
             <th>Trạng thái</th>
             <th>Tác vụ</th>
           </tr>
@@ -249,7 +262,7 @@ const Users: React.FC = () => {
 
               <td>
                 {u.Avatar ? (
-                  <img src={u.Avatar} width="40" style={{ borderRadius: "50%" }} />
+                  <img src={u.Avatar} width="40" style={{ borderRadius: "0px" }} />
                 ) : "👤"}
               </td>
 
@@ -257,7 +270,21 @@ const Users: React.FC = () => {
               <td>{u.HoTen}</td>
               <td>{u.Email || "-"}</td>
               <td>{u.SDT || "-"}</td>
-              <td>{u.TenVaiTro || u.RoleID}</td>
+               <td>{u.TenVaiTro || u.RoleID}</td>
+              <td>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>{visiblePasswords[u.UserID] ? (u.PasswordHash || "N/A") : "••••••••"}</span>
+                  <button 
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVisiblePasswords(prev => ({ ...prev, [u.UserID]: !prev[u.UserID] }));
+                    }}
+                  >
+                    {visiblePasswords[u.UserID] ? "🔒" : "👁️"}
+                  </button>
+                </div>
+              </td>
               <td>{u.TrangThai}</td>
 
               <td className="actions">
@@ -283,6 +310,7 @@ const Users: React.FC = () => {
               value={form.Username}
               onChange={handleChange}
               placeholder="Username"
+              autoComplete="off"
             />
 
             <label>Mật khẩu</label>
@@ -293,6 +321,7 @@ const Users: React.FC = () => {
                 value={form.PasswordHash}
                 onChange={handleChange}
                 placeholder="Mật khẩu"
+                autoComplete="new-password"
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)}>
                 👁
@@ -322,7 +351,10 @@ const Users: React.FC = () => {
             </select>
 
             <label>Avatar</label>
-            <input name="Avatar" value={form.Avatar} onChange={handleChange} placeholder="Link avatar" />
+            <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+              <input name="Avatar" value={form.Avatar} onChange={handleChange} placeholder="Link avatar" style={{ flex: 1 }} />
+              <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: "100px" }} />
+            </div>
 
             {form.Avatar && <img src={form.Avatar} width="60" />}
 

@@ -117,6 +117,17 @@ const Vehicles: React.FC = () => {
     setShowForm(true);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm({ ...form, HinhAnh: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.LoaiPhuongTien || !form.BienSo) {
       alert("Thiếu loại xe hoặc biển số!");
@@ -231,10 +242,13 @@ const Vehicles: React.FC = () => {
             <label>Biển số *</label>
             <input name="BienSo" value={form.BienSo} onChange={handleChange} />
 
-            <label>Link hình ảnh</label>
-            <input name="HinhAnh" value={form.HinhAnh} onChange={handleChange} />
+            <label>Hình ảnh</label>
+            <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+              <input name="HinhAnh" value={form.HinhAnh} onChange={handleChange} placeholder="Link hình ảnh" style={{ flex: 1 }} />
+              <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: "100px" }} />
+            </div>
             {form.HinhAnh && (
-              <img src={form.HinhAnh} width="80" style={{ marginBottom: "10px", borderRadius: "6px" }} />
+              <img src={form.HinhAnh} width="80" style={{ marginBottom: "10px", borderRadius: "0px" }} />
             )}
 
             <label>Tải trọng (tấn)</label>

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "./component/header";
 import Sidebar from "./component/sidebar";
 import Footer from "./component/footer";
+import AuthPage from "./component/login";
 
 import Containers from "./pages/Containers";
 import ContainerHistory from "./pages/Containerhistory";
@@ -25,74 +26,75 @@ import Users from "./pages/Users";
 import Dashboard from "./pages/Dashboard";
 
 function App() {
+  const [module, setModule] = useState<string>("dashboard");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
-  const [module, setModule] = useState<string>("containers");
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem("currentUser");
+      if (savedUser && savedUser !== "undefined") {
+        setUser(JSON.parse(savedUser));
+        setIsLoggedIn(true);
+      }
+    } catch (e) {
+      console.error("Lỗi parse user:", e);
+      localStorage.removeItem("currentUser");
+    }
+  }, []);
+
+  const handleLogin = (userData: any) => {
+    setUser(userData);
+    setIsLoggedIn(true);
+    localStorage.setItem("currentUser", JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setIsLoggedIn(false);
+    localStorage.removeItem("currentUser");
+  };
 
   const renderModule = () => {
     switch (module) {
-
-      case "containers":
-        return <Containers />;
-
-      case "containerhistory":
-        return <ContainerHistory />;
-      case "itemtypes":
-          return <ItemTypes />;
-      case "warehouses":
-          return <Warehouses />;
-      case "vehicles":
-          return <Vehicles />;
-      case "trips":
-          return <Trips/>
-      case "ports":
-        return <Ports/>
-      case "customers":
-        return <Customers/>
-      case "contracts":
-        return <Contracts/>
-      case "costs":
-        return <Costs/>
-      case "invoices":
-        return <Invoices/>
-      case "users":
-        return <Users/>
-      case "dashboard":
-        return <Dashboard/>
-      case "assignmentcontainers":
-        return <AssignmentContainers/>
-      case "auditlogs":
-        return <AuditLogs/>
-      case "gpscontainers":
-        return <GPSContainers/>
-      case "maintenance":
-        return <Maintenance/>
-      case "suppliers":
-        return <Suppliers/>
-
-      default:
-        return <h2>Chưa có dữ liệu</h2>;
+      case "containers": return <Containers />;
+      case "containerhistory": return <ContainerHistory />;
+      case "itemtypes": return <ItemTypes />;
+      case "warehouses": return <Warehouses />;
+      case "vehicles": return <Vehicles />;
+      case "trips": return <Trips />
+      case "ports": return <Ports />
+      case "customers": return <Customers />
+      case "contracts": return <Contracts />
+      case "costs": return <Costs />
+      case "invoices": return <Invoices />
+      case "users": return <Users />
+      case "dashboard": return <Dashboard />
+      case "assignmentcontainers": return <AssignmentContainers />
+      case "auditlogs": return <AuditLogs />
+      case "gpscontainers": return <GPSContainers />
+      case "maintenance": return <Maintenance />
+      case "suppliers": return <Suppliers />
+      default: return <Dashboard />;
     }
   };
 
+  if (!isLoggedIn) {
+    return <AuthPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app">
-  
-      <Header />
-  
+      <Header user={user} onLogout={handleLogout} />
       <div className="container">
-  
         <Sidebar onSelect={setModule} />
-  
         <div className="main-content">
           {renderModule()}
         </div>
-  
       </div>
-  
       <Footer />
-  
     </div>
   );
 }
 
-export default App;
+export default App;

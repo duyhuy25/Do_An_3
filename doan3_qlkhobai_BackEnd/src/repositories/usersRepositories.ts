@@ -8,6 +8,7 @@ export const getAllUser = async () => {
   SELECT 
     u.UserID,
     u.Username,
+    u.PasswordHash,
     u.HoTen,
     u.Email,
     u.TrangThai,
@@ -42,7 +43,7 @@ export const createUser = async (data: any) => {
     .input("DiaChi", sql.NVarChar(200), data.DiaChi)
     .input("NgaySinh", sql.Date, data.NgaySinh)
     .input("GioiTinh", sql.NVarChar(10), data.GioiTinh)
-    .input("Avatar", sql.NVarChar(255), data.Avatar)
+    .input("Avatar", sql.NVarChar(sql.MAX), data.Avatar)
 
     .query(`
       INSERT INTO Users 
@@ -55,35 +56,46 @@ export const updateUserById = async (id: number, data: any) => {
   const pool = await poolPromise;
   const roleId = data.RoleID ? Number(data.RoleID) : 1;
 
-  await pool.request()
+  const request = pool.request()
     .input("UserID", sql.Int, id)
     .input("Username", sql.NVarChar(50), data.Username)
     .input("HoTen", sql.NVarChar(100), data.HoTen)
     .input("Email", sql.NVarChar(100), data.Email)
     .input("TrangThai", sql.NVarChar(50), data.TrangThai ?? "Hoạt động")
     .input("RoleID", sql.Int, roleId)
-
     .input("SDT", sql.NVarChar(20), data.SDT)
     .input("DiaChi", sql.NVarChar(200), data.DiaChi)
     .input("NgaySinh", sql.Date, data.NgaySinh)
     .input("GioiTinh", sql.NVarChar(10), data.GioiTinh)
-    .input("Avatar", sql.NVarChar(255), data.Avatar)
+    .input("Avatar", sql.NVarChar(sql.MAX), data.Avatar);
 
-    .query(`
-      UPDATE Users 
-      SET 
-        Username = @Username,
-        HoTen = @HoTen,
-        Email = @Email,
-        TrangThai = @TrangThai,
-        RoleID = @RoleID,
-        SDT = @SDT,
-        DiaChi = @DiaChi,
-        NgaySinh = @NgaySinh,
-        GioiTinh = @GioiTinh,
-        Avatar = @Avatar
-      WHERE UserID = @UserID
-    `);
+  let query = `
+    UPDATE Users 
+    SET 
+      Username = @Username,
+      HoTen = @HoTen,
+      Email = @Email,
+      TrangThai = @TrangThai,
+      RoleID = @RoleID,
+      SDT = @SDT,
+      DiaChi = @DiaChi,
+      NgaySinh = @NgaySinh,
+      GioiTinh = @GioiTinh,
+      Avatar = @Avatar
+  `;
+
+  if (data.PasswordHash) {
+    console.log("Đang cập nhật mật khẩu cho UserID:", id);
+    query += `, PasswordHash = @PasswordHash `;
+    request.input("PasswordHash", sql.NVarChar(255), data.PasswordHash);
+  } else {
+    console.log("Không có mật khẩu mới cho UserID:", id);
+  }
+
+  query += ` WHERE UserID = @UserID`;
+
+  console.log("SQL Query:", query);
+  await request.query(query);
 };
 export const deleteUserById = async (id: number) => {
   const pool = await poolPromise;

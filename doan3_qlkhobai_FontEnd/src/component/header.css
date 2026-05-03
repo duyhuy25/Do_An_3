@@ -24,3 +24,44 @@
   text-decoration: none;
   font-weight: bold;
 }
+
+.user-info {
+  position: relative;
+  cursor: pointer;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-radius: 6px;
+  padding: 8px;
+  z-index: 1000;
+  min-width: 150px;
+}
+
+.btn-logout {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background-color: #ff4757;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: opacity 0.3s;
+}
+
+.btn-logout:hover {
+  opacity: 0.9;
+}
