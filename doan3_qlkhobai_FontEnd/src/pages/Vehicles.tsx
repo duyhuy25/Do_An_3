@@ -180,7 +180,7 @@ const Vehicles: React.FC = () => {
         <h2>🚚 Phương tiện</h2>
 
         <div className="toolbar">
-          <input className="search" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="search" placeholder="Tìm..." value={search} onChange={e => setSearch(e.target.value)}/>
           <button className="btn-add" onClick={handleOpenAdd}>
             + Thêm
           </button>

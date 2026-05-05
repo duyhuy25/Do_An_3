@@ -194,7 +194,7 @@ const Trips: React.FC = () => {
         <h2>🚢 Chuyến đi</h2>
 
         <div className="toolbar">
-          <input className="search" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="search" placeholder="Tìm kiếm" value={search} onChange={e => setSearch(e.target.value)} />
           <button className="btn-add" onClick={handleOpenAdd}>
             + Thêm
           </button>
