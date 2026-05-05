@@ -67,3 +67,17 @@ export const searchGpsContainerByKeyword = async (searchTerm = "") => {
   const result = await request.query(query);
   return result.recordset;
 };
+
+export const getLatestGpsForAllContainers = async () => {
+  const pool = await poolPromise;
+  const result = await pool.request().query(`
+    SELECT g1.*
+    FROM GPS_Container g1
+    INNER JOIN (
+      SELECT ContainerID, MAX(ThoiGian) as MaxTime
+      FROM GPS_Container
+      GROUP BY ContainerID
+    ) g2 ON g1.ContainerID = g2.ContainerID AND g1.ThoiGian = g2.MaxTime
+  `);
+  return result.recordset;
+};

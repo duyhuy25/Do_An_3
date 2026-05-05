@@ -98,3 +98,19 @@ export const searchVehicleByKeyword = async (keyword: string) => {
   const result = await request.query(query);
   return result.recordset;
 };
+
+export const getVehicleById = async (id: number) => {
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input("PhuongTienID", sql.Int, id)
+    .query("SELECT * FROM PhuongTien WHERE PhuongTienID = @PhuongTienID");
+  return result.recordset[0];
+};
+
+export const updateVehicleStatus = async (id: number, status: string) => {
+  const pool = await poolPromise;
+  await pool.request()
+    .input("PhuongTienID", sql.Int, id)
+    .input("TrangThai", sql.NVarChar(50), status)
+    .query("UPDATE PhuongTien SET TrangThai = @TrangThai WHERE PhuongTienID = @PhuongTienID");
+};

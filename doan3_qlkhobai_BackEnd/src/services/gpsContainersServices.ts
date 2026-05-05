@@ -25,3 +25,8 @@ export const deleteGpsContainerService = async (id: number) => {
 export const searchGpsContainerService = async (keyword: string) => {
   return await searchGpsContainerByKeyword(keyword);
 };
+
+export const fetchLatestGpsService = async () => {
+  const { getLatestGpsForAllContainers } = require("../repositories/gpsContainersRepositories");
+  return await getLatestGpsForAllContainers();
+};

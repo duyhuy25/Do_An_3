@@ -4,12 +4,23 @@ import {
   addGpsContainerService,
   updateGpsContainerService,
   deleteGpsContainerService,
-  searchGpsContainerService
+  searchGpsContainerService,
+  fetchLatestGpsService
 } from "../services/gpsContainersServices";
 
 export const getGpsContainers = async (req: Request, res: Response) => {
   try {
     const data = await fetchGpsContainers();
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+export const getLatestGps = async (req: Request, res: Response) => {
+  try {
+    const data = await fetchLatestGpsService();
     res.json(data);
   } catch (error) {
     console.error(error);

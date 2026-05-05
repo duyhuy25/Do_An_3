@@ -4,12 +4,14 @@ import {
   addGpsContainer,
   updateGpsContainer,
   deleteGpsContainer,
-  searchGpsContainer
+  searchGpsContainer,
+  getLatestGps
 } from "../controllers/gpsContainersController";
 
 const router = express.Router();
 
 router.get("/gps", getGpsContainers);
+router.get("/latest", getLatestGps);
 router.get("/gps/search", searchGpsContainer);
 router.post("/gps", addGpsContainer);
 router.put("/gps/:id", updateGpsContainer);

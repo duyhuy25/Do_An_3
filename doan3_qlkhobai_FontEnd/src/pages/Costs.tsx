@@ -8,6 +8,12 @@ interface Cost {
   LoaiChiPhi: string;
   SoTien: number;
   ThuKhachHang: string;
+  NhaCungCap?: string;
+}
+
+interface SupplierOption {
+  NCCID: number;
+  TenNCC: string;
 }
 
 interface HopDongOption {
@@ -26,6 +32,7 @@ const Costs: React.FC = () => {
   const [costs, setCosts] = useState<Cost[]>([]);
   const [hopDongs, setHopDongs] = useState<HopDongOption[]>([]);
   const [containers, setContainers] = useState<ContainerOption[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -41,6 +48,7 @@ const Costs: React.FC = () => {
     LoaiChiPhi: "",
     SoTien: "",
     ThuKhachHang: "Không",
+    NhaCungCap: "",
   });
 
   const fetchCosts = useCallback(async (searchTerm: string = "") => {
@@ -87,10 +95,20 @@ const Costs: React.FC = () => {
     }
   }, []);
 
+  const fetchSuppliers = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/supplier");
+      const data = await res.json();
+      setSuppliers(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchCosts(), fetchHopDongs(), fetchContainers()]).finally(() => setLoading(false));
-  }, [fetchCosts, fetchHopDongs, fetchContainers]);
+    Promise.all([fetchCosts(), fetchHopDongs(), fetchContainers(), fetchSuppliers()]).finally(() => setLoading(false));
+  }, [fetchCosts, fetchHopDongs, fetchContainers, fetchSuppliers]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -110,6 +128,12 @@ const Costs: React.FC = () => {
     containers.map((c) => [c.ContainerID, c])
   );
 
+  const formatSupplier = (nccValue: string | undefined) => {
+    if (!nccValue) return "-";
+    const ncc = suppliers.find(s => s.NCCID.toString() === nccValue || s.TenNCC === nccValue);
+    return ncc ? ncc.TenNCC : nccValue;
+  };
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -128,6 +152,7 @@ const Costs: React.FC = () => {
       LoaiChiPhi: "",
       SoTien: "",
       ThuKhachHang: "Không",
+      NhaCungCap: "",
     });
     setShowForm(true);
   };
@@ -141,6 +166,7 @@ const Costs: React.FC = () => {
       LoaiChiPhi: item.LoaiChiPhi,
       SoTien: item.SoTien.toString(),
       ThuKhachHang: item.ThuKhachHang,
+      NhaCungCap: item.NhaCungCap || "",
     });
     setShowForm(true);
   };
@@ -243,6 +269,7 @@ const Costs: React.FC = () => {
             <th>ID</th>
             <th>Hợp đồng</th>
             <th>Container</th>
+            <th>Nhà cung cấp</th>
             <th>Loại chi phí</th>
             <th>Số tiền</th>
             <th>Thu KH</th>
@@ -253,7 +280,6 @@ const Costs: React.FC = () => {
         <tbody>
           {costs.map((c) => {
             const hd = hopDongMap[c.HopDongID];
-            const ct = containerMap[c.ContainerID || 0];
 
             return (
               <tr key={c.ChiPhiID} onClick={() => handleOpenEdit(c)}>
@@ -271,8 +297,9 @@ const Costs: React.FC = () => {
                         .map((ct) => ct.formattedID)
                         .join(", ") || "-"}
                 </td>
+                <td>{formatSupplier(c.NhaCungCap)}</td>
                 <td>{c.LoaiChiPhi}</td>
-                <td>{c.SoTien.toLocaleString("vi-VN")}</td>
+                <td>{c.SoTien.toLocaleString("vi-VN")} đ</td>
                 <td>{c.ThuKhachHang}</td>
 
                 <td className="actions">
@@ -339,11 +366,26 @@ const Costs: React.FC = () => {
               ))}
             </select>
 
+            <label>Nhà cung cấp (Đối tác chi trả)</label>
+            <select
+              name="NhaCungCap"
+              value={form.NhaCungCap}
+              onChange={handleChange}
+            >
+              <option value="">-- Tự chi trả / Khác --</option>
+              {suppliers.map(s => (
+                <option key={s.NCCID} value={s.NCCID.toString()}>
+                  {s.TenNCC}
+                </option>
+              ))}
+            </select>
+
             <label>Loại chi phí *</label>
             <input
               name="LoaiChiPhi"
               value={form.LoaiChiPhi}
               onChange={handleChange}
+              placeholder="Ví dụ: Phí cầu đường, Phí nâng hạ..."
             />
 
             <label>Số tiền *</label>
@@ -360,8 +402,8 @@ const Costs: React.FC = () => {
               value={form.ThuKhachHang}
               onChange={handleChange}
             >
-              <option value="Không">Không</option>
-              <option value="Có">Có</option>
+              <option value="Không">Không (Chi phí vận hành)</option>
+              <option value="Có">Có (Sẽ cộng vào hóa đơn khách)</option>
             </select>
 
             <div className="modal-actions">

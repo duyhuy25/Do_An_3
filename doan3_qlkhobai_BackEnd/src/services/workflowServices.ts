@@ -153,7 +153,8 @@ export const workflowStartTransport = async (containerId: number, chuyenDiId: nu
     // Update Container
     await request.query(`
       UPDATE Container 
-      SET TrangThai = N'Đang vận chuyển'
+      SET TrangThai = N'Đang vận chuyển',
+          PhuongTienID = @PhuongTienID
       WHERE ContainerID = @ContainerID
     `);
 
@@ -389,26 +390,49 @@ export const workflowDeliverContainer = async (containerId: number, nguoiCapNhat
 
     // Update Trip if valid
     if (finalChuyenDiId) {
-      await request
-        .input("ChuyenDiID_Update", sql.Int, finalChuyenDiId)
-        .query(`
-          UPDATE ChuyenDi 
-          SET TrangThai = N'Hoàn thành'
-          WHERE ChuyenDiID = @ChuyenDiID_Update
-        `);
+      request.input("ChuyenDiID_Update", sql.Int, finalChuyenDiId);
 
-      // Update PhanCongContainer
+      // Cập nhật trạng thái phân công của container hiện tại
       await request.query(`
         UPDATE PhanCongContainer
         SET TrangThai = N'Hoàn tất'
         WHERE ContainerID = @ContainerID AND ChuyenDiID = @ChuyenDiID_Update
       `);
+
+      // Kiểm tra xem còn container nào khác chưa hoàn thành trong chuyến đi này không
+      const checkRemainingRes = await request.query(`
+        SELECT COUNT(*) as RemainingCount FROM PhanCongContainer 
+        WHERE ChuyenDiID = @ChuyenDiID_Update AND TrangThai NOT IN (N'Hoàn tất', N'Hủy')
+      `);
+
+      const remainingCount = checkRemainingRes.recordset[0].RemainingCount;
+
+      if (remainingCount === 0) {
+        // Nếu tất cả container đã giao xong, đưa chuyến đi về "Chuẩn bị" để có thể tái sử dụng (hoặc Hoàn thành tùy nghiệp vụ, ở đây tôi chọn Chuẩn bị theo ý người dùng)
+        await request.query(`
+          UPDATE ChuyenDi 
+          SET TrangThai = N'Chuẩn bị',
+              PhuongTienID = NULL -- Giải phóng xe khỏi chuyến đi để xe có thể đi chuyến khác
+          WHERE ChuyenDiID = @ChuyenDiID_Update
+        `);
+      }
     }
 
     // Update Vehicle if valid
-    if (finalPhuongTienId) {
+    let vehicleIdToRelease = finalPhuongTienId;
+
+    if (!vehicleIdToRelease && finalChuyenDiId) {
+      const tripRes = await request
+        .input("ChuyenDiID_Trip", sql.Int, finalChuyenDiId)
+        .query(`SELECT PhuongTienID FROM ChuyenDi WHERE ChuyenDiID = @ChuyenDiID_Trip`);
+      if (tripRes.recordset.length > 0) {
+        vehicleIdToRelease = tripRes.recordset[0].PhuongTienID;
+      }
+    }
+
+    if (vehicleIdToRelease) {
       await request
-        .input("PhuongTienID_Update", sql.Int, finalPhuongTienId)
+        .input("PhuongTienID_Update", sql.Int, vehicleIdToRelease)
         .query(`
           UPDATE PhuongTien 
           SET TrangThai = N'Sẵn sàng'

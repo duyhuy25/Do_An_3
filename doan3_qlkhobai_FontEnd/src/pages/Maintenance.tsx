@@ -8,16 +8,24 @@ interface Maintenance {
   NoiDung: string;
   ChiPhi: number;
   TrangThai: string;
+  NCCID?: number;
 }
 
 interface VehicleOption {
   PhuongTienID: number;
   BienSo: string;
+  TrangThai: string;
+}
+
+interface SupplierOption {
+  NCCID: number;
+  TenNCC: string;
 }
 
 const Maintenance: React.FC = () => {
   const [list, setList] = useState<Maintenance[]>([]);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -32,7 +40,8 @@ const Maintenance: React.FC = () => {
     NgayBaoTri: "",
     NoiDung: "",
     ChiPhi: "",
-    TrangThai: "Chờ bảo trì"
+    TrangThai: "Chờ bảo trì",
+    NCCID: ""
   });
 
   const fetchData = useCallback(async (searchTerm: string = "") => {
@@ -61,6 +70,16 @@ const Maintenance: React.FC = () => {
     }
   }, []);
 
+  const fetchSuppliers = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/supplier");
+      const data = await res.json();
+      setSuppliers(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       fetchData(search);
@@ -70,12 +89,15 @@ const Maintenance: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchData(), fetchVehicles()])
+    Promise.all([fetchData(), fetchVehicles(), fetchSuppliers()])
       .finally(() => setLoading(false));
-  }, [fetchData, fetchVehicles]);
+  }, [fetchData, fetchVehicles, fetchSuppliers]);
 
   const formatVehicle = (id: number) =>
     vehicles.find(v => v.PhuongTienID === id)?.BienSo || id;
+
+  const formatSupplier = (id: number) =>
+    suppliers.find(s => s.NCCID === id)?.TenNCC || "-";
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -89,7 +111,8 @@ const Maintenance: React.FC = () => {
       NgayBaoTri: "",
       NoiDung: "",
       ChiPhi: "",
-      TrangThai: "Chờ bảo trì"
+      TrangThai: "Chờ bảo trì",
+      NCCID: ""
     });
     setShowForm(true);
   };
@@ -99,10 +122,11 @@ const Maintenance: React.FC = () => {
     setSelected(item);
     setForm({
       PhuongTienID: item.PhuongTienID.toString(),
-      NgayBaoTri: item.NgayBaoTri,
+      NgayBaoTri: item.NgayBaoTri ? item.NgayBaoTri.split("T")[0] : "",
       NoiDung: item.NoiDung,
       ChiPhi: item.ChiPhi.toString(),
-      TrangThai: item.TrangThai
+      TrangThai: item.TrangThai,
+      NCCID: item.NCCID ? item.NCCID.toString() : ""
     });
     setShowForm(true);
   };
@@ -118,7 +142,8 @@ const Maintenance: React.FC = () => {
       NgayBaoTri: form.NgayBaoTri,
       NoiDung: form.NoiDung,
       ChiPhi: Number(form.ChiPhi || 0),
-      TrangThai: form.TrangThai
+      TrangThai: form.TrangThai,
+      NCCID: form.NCCID ? Number(form.NCCID) : null
     };
 
     try {
@@ -135,6 +160,7 @@ const Maintenance: React.FC = () => {
       if (res.ok) {
         setShowForm(false);
         fetchData(search);
+        alert("Cập nhật thành công! Trạng thái xe đã được đồng bộ.");
       } else {
         alert("Lỗi server");
       }
@@ -182,6 +208,7 @@ const Maintenance: React.FC = () => {
           <tr>
             <th>ID</th>
             <th>Phương tiện</th>
+            <th>Nhà cung cấp</th>
             <th>Ngày</th>
             <th>Nội dung</th>
             <th>Chi phí</th>
@@ -194,6 +221,7 @@ const Maintenance: React.FC = () => {
             <tr key={m.BaoTriID} onClick={() => handleOpenEdit(m)}>
               <td>{m.BaoTriID}</td>
               <td>{formatVehicle(m.PhuongTienID)}</td>
+              <td>{formatSupplier(m.NCCID || 0)}</td>
               <td>{new Date(m.NgayBaoTri).toLocaleDateString("vi-VN")}</td>
               <td>{m.NoiDung}</td>
               <td>{m.ChiPhi.toLocaleString("vi-VN")} đ</td>
@@ -233,10 +261,20 @@ const Maintenance: React.FC = () => {
 
             <label>Phương tiện *</label>
             <select name="PhuongTienID" value={form.PhuongTienID} onChange={handleChange}>
-              <option value="">-- chọn --</option>
+              <option value="">-- chọn xe --</option>
               {vehicles.map(v => (
                 <option key={v.PhuongTienID} value={v.PhuongTienID}>
-                  {v.BienSo}
+                  {v.BienSo} ({v.TrangThai})
+                </option>
+              ))}
+            </select>
+
+            <label>Nhà cung cấp thực hiện</label>
+            <select name="NCCID" value={form.NCCID} onChange={handleChange}>
+              <option value="">-- chọn đối tác --</option>
+              {suppliers.map(s => (
+                <option key={s.NCCID} value={s.NCCID}>
+                  {s.TenNCC}
                 </option>
               ))}
             </select>
@@ -244,17 +282,17 @@ const Maintenance: React.FC = () => {
             <label>Ngày bảo trì *</label>
             <input type="date" name="NgayBaoTri" value={form.NgayBaoTri} onChange={handleChange} />
 
-            <label>Nội dung</label>
-            <input name="NoiDung" value={form.NoiDung} onChange={handleChange} />
+            <label>Nội dung sửa chữa</label>
+            <input name="NoiDung" value={form.NoiDung} onChange={handleChange} placeholder="Ví dụ: Thay dầu, thay lốp..." />
 
-            <label>Chi phí</label>
+            <label>Chi phí dự kiến/thực tế (đ)</label>
             <input type="number" name="ChiPhi" value={form.ChiPhi} onChange={handleChange} />
 
-            <label>Trạng thái</label>
+            <label>Trạng thái bảo trì</label>
             <select name="TrangThai" value={form.TrangThai} onChange={handleChange}>
               <option value="Chờ bảo trì">Chờ bảo trì</option>
-              <option value="Đang bảo trì">Đang bảo trì</option>
-              <option value="Hoàn thành">Hoàn thành</option>
+              <option value="Đang bảo trì">Đang bảo trì (Xe sẽ dừng hoạt động)</option>
+              <option value="Hoàn thành">Hoàn thành (Xe hoạt động lại & Tạo chi phí)</option>
             </select>
 
             <div className="modal-actions">

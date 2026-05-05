@@ -17,9 +17,10 @@ export const createMaintenance = async (data: any) => {
     .input("NoiDung", data.NoiDung)
     .input("ChiPhi", data.ChiPhi)
     .input("TrangThai", data.TrangThai)
+    .input("NCCID", data.NCCID || null)
     .query(`
-      INSERT INTO BaoTriPhuongTien (PhuongTienID, NgayBaoTri, NoiDung, ChiPhi, TrangThai)
-      VALUES (@PhuongTienID, @NgayBaoTri, @NoiDung, @ChiPhi, @TrangThai)
+      INSERT INTO BaoTriPhuongTien (PhuongTienID, NgayBaoTri, NoiDung, ChiPhi, TrangThai, NCCID)
+      VALUES (@PhuongTienID, @NgayBaoTri, @NoiDung, @ChiPhi, @TrangThai, @NCCID)
     `);
 };
 
@@ -32,13 +33,15 @@ export const updateMaintenanceById = async (id: number, data: any) => {
     .input("NoiDung", data.NoiDung)
     .input("ChiPhi", data.ChiPhi)
     .input("TrangThai", data.TrangThai)
+    .input("NCCID", data.NCCID || null)
     .query(`
       UPDATE BaoTriPhuongTien SET
         PhuongTienID = @PhuongTienID,
         NgayBaoTri = @NgayBaoTri,
         NoiDung = @NoiDung,
         ChiPhi = @ChiPhi,
-        TrangThai = @TrangThai
+        TrangThai = @TrangThai,
+        NCCID = @NCCID
       WHERE BaoTriID = @BaoTriID
     `);
 };

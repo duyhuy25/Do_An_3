@@ -32,6 +32,7 @@ const Containers: React.FC = () => {
   const [khos, setKhos] = useState<KhoOption[]>([]);
   const [phuongTiens, setPhuongTiens] = useState<PhuongTienOption[]>([]);
   const [hopDongs, setHopDongs] = useState<HopDongOption[]>([]);
+  const [latestGps, setLatestGps] = useState<any[]>([]);
 
   const [chuyenDis, setChuyenDis] = useState<any[]>([]);
 
@@ -81,12 +82,13 @@ const Containers: React.FC = () => {
 
   const fetchOptions = useCallback(async () => {
     try {
-      const [lh, k, pt, hd, cd] = await Promise.all([
+      const [lh, k, pt, hd, cd, gps] = await Promise.all([
         fetch("http://localhost:5000/api/itemtype/itemtype").then(res => res.json()),
         fetch("http://localhost:5000/api/warehouse/warehouse").then(res => res.json()),
         fetch("http://localhost:5000/api/vehicle/vehicle").then(res => res.json()),
         fetch("http://localhost:5000/api/contract/contract").then(res => res.json()),
-        fetch("http://localhost:5000/api/trip/trip").then(res => res.json())
+        fetch("http://localhost:5000/api/trip/trip").then(res => res.json()),
+        fetch("http://localhost:5000/api/latest").then(res => res.json())
       ]);
 
       setLoaiHangs(lh);
@@ -94,6 +96,7 @@ const Containers: React.FC = () => {
       setPhuongTiens(pt);
       setHopDongs(hd);
       setChuyenDis(cd);
+      setLatestGps(gps);
 
     } catch (err) {
       console.error(err);
@@ -135,7 +138,7 @@ const Containers: React.FC = () => {
     executeWorkflow(`http://localhost:5000/api/workflow/${action}/${id}`);
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -281,102 +284,116 @@ const Containers: React.FC = () => {
             <th>Tình trạng vỏ</th>
             <th>Nhiệt độ</th>
             <th>Độ ẩm</th>
+            <th>Vị trí GPS</th>
             <th>Điều phối</th>
             <th>Tác vụ</th>
           </tr>
         </thead>
 
         <tbody>
-          {containers.map((c) => (
-            <tr key={c.ContainerID} onClick={() => handleOpenEdit(c)}>
-              <td>{formatID(c.ContainerID)}</td>
-              <td>{c.MaContainer || "-"}</td>
+          {containers.map((c) => {
+            const gps = latestGps.find(g => g.ContainerID === c.ContainerID);
+            const isOverspeed = gps && gps.TocDo > 80;
 
-              <td>
-                {loaiHangs.find(l => l.LoaiHangID === c.LoaiHangID)?.TenLoai}
-              </td>
+            return (
+              <tr key={c.ContainerID} onClick={() => handleOpenEdit(c)}>
+                <td>{formatID(c.ContainerID)}</td>
+                <td>{c.MaContainer || "-"}</td>
 
-              <td>{c.TrongLuong?.toLocaleString("vi-VN")}</td>
+                <td>
+                  {loaiHangs.find(l => l.LoaiHangID === c.LoaiHangID)?.TenLoai}
+                </td>
 
-              <td>{c.KichThuoc || "-"}</td>
-              <td>{c.LoaiContainer || "-"}</td>
+                <td>{c.TrongLuong?.toLocaleString("vi-VN")}</td>
+                <td>{c.KichThuoc || "-"}</td>
+                <td>{c.LoaiContainer || "-"}</td>
 
-              <td>{c.TrangThai}</td>
+                <td>{c.TrangThai}</td>
 
-              <td>{khos.find(k => k.KhoID === c.KhoID)?.TenKho || "-"}</td>
+                <td>{khos.find(k => k.KhoID === c.KhoID)?.TenKho || "-"}</td>
 
-              <td>
-                {phuongTiens.find(p => p.PhuongTienID === c.PhuongTienID)?.BienSo || "-"}
-              </td>
+                <td>
+                  {phuongTiens.find(p => p.PhuongTienID === c.PhuongTienID)?.BienSo || "-"}
+                </td>
 
-              <td>
-                {hopDongs.find(h => h.HopDongID === c.HopDongID)?.MaHopDong || c.HopDongID}
-              </td>
+                <td>
+                  {hopDongs.find(h => h.HopDongID === c.HopDongID)?.MaHopDong || c.HopDongID}
+                </td>
 
-              <td>{c.NgayDongHang ? c.NgayDongHang.slice(0, 10) : "-"}</td>
-              <td>{c.NgayMoHang ? c.NgayMoHang.slice(0, 10) : "-"}</td>
+                <td>{c.NgayDongHang ? c.NgayDongHang.slice(0, 10) : "-"}</td>
+                <td>{c.NgayMoHang ? c.NgayMoHang.slice(0, 10) : "-"}</td>
+                <td>{c.TinhTrangVo || "-"}</td>
+                <td>{c.NhietDoBaoQuan ?? "-"}</td>
+                <td>{c.DoAm ?? "-"}</td>
 
-              <td>{c.TinhTrangVo || "-"}</td>
+                <td>
+                  {gps ? (
+                    <div style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                      📍 {gps.ViDo.toFixed(2)}, {gps.KinhDo.toFixed(2)} <br />
+                      ⚡ <span style={{ color: isOverspeed ? 'red' : 'inherit', fontWeight: isOverspeed ? 'bold' : 'normal' }}>
+                        {gps.TocDo} km/h
+                      </span>
+                    </div>
+                  ) : "-"}
+                </td>
 
-              <td>{c.NhietDoBaoQuan ?? "-"}</td>
-              <td>{c.DoAm ?? "-"}</td>
+                <td className="actions">
+                  <div className="td-actions" style={{ flexDirection: 'column', gap: '5px' }}>
+                    {c.TrangThai === "Rỗng" && (
+                      <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("start-packing", c.ContainerID); }}>Bắt đầu đóng hàng</button>
+                    )}
+                    {c.TrangThai === "Đang đóng hàng" && (
+                      <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("finish-packing", c.ContainerID); }}>Hoàn tất đóng hàng</button>
+                    )}
+                    {c.TrangThai === "Đã đóng hàng" && (
+                      <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setWfAction({ type: "enter-warehouse", container: c }); setWfForm({ ...wfForm, khoId: "" }); }}>Nhập kho</button>
+                    )}
+                    {(c.TrangThai === "Trong kho" || c.TrangThai === "Đã đóng hàng") && (
+                      <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setWfAction({ type: "start-transport", container: c }); setWfForm({ ...wfForm, chuyenDiId: "", phuongTienId: "" }); }}>Vận chuyển</button>
+                    )}
+                    {c.TrangThai === "Đang vận chuyển" && (
+                      <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("vehicle-arrived", c.ContainerID); }}>Đã đến nơi</button>
+                    )}
+                    {c.TrangThai === "Đã đến nơi" && (
+                      <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("deliver-container", c.ContainerID); }}>Đã giao</button>
+                    )}
+                    {c.TrangThai !== "Đã giao" && c.TrangThai !== "Hủy" && (
+                      <button className="btn-delete" onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('Bạn có chắc chắn muốn hủy đơn (Container) này không?')) {
+                          handleSimpleWorkflow("cancel-container", c.ContainerID);
+                        }
+                      }}>Hủy đơn</button>
+                    )}
+                  </div>
+                </td>
 
-              <td className="actions">
-                <div className="td-actions" style={{ flexDirection: 'column', gap: '5px' }}>
-                  {c.TrangThai === "Rỗng" && (
-                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("start-packing", c.ContainerID); }}>Bắt đầu đóng hàng</button>
-                  )}
-                  {c.TrangThai === "Đang đóng hàng" && (
-                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("finish-packing", c.ContainerID); }}>Hoàn tất đóng hàng</button>
-                  )}
-                  {c.TrangThai === "Đã đóng hàng" && (
-                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setWfAction({ type: "enter-warehouse", container: c }); setWfForm({ ...wfForm, khoId: "" }); }}>Nhập kho</button>
-                  )}
-                  {(c.TrangThai === "Trong kho" || c.TrangThai === "Đã đóng hàng") && (
-                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setWfAction({ type: "start-transport", container: c }); setWfForm({ ...wfForm, chuyenDiId: "", phuongTienId: "" }); }}>Vận chuyển</button>
-                  )}
-                  {c.TrangThai === "Đang vận chuyển" && (
-                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("vehicle-arrived", c.ContainerID); }}>Đã đến nơi</button>
-                  )}
-                  {c.TrangThai === "Đã đến nơi" && (
-                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleSimpleWorkflow("deliver-container", c.ContainerID); }}>Đã giao</button>
-                  )}
-                  {c.TrangThai !== "Đã giao" && c.TrangThai !== "Hủy" && (
-                    <button className="btn-delete" onClick={(e) => { 
-                      e.stopPropagation(); 
-                      if(window.confirm('Bạn có chắc chắn muốn hủy đơn (Container) này không?')) {
-                        handleSimpleWorkflow("cancel-container", c.ContainerID);
-                      }
-                    }}>Hủy đơn</button>
-                  )}
-                </div>
-              </td>
+                <td className="actions">
+                  <div className="td-actions">
+                    <button
+                      className="btn-edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(c);
+                      }}
+                    >
+                      Sửa
+                    </button>
 
-              <td className="actions">
-                <div className="td-actions">
-                  <button
-                    className="btn-edit"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEdit(c);
-                    }}
-                  >
-                    Sửa
-                  </button>
-
-                  <button
-                    className="btn-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(c.ContainerID);
-                    }}
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
+                    <button
+                      className="btn-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(c.ContainerID);
+                      }}
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -556,9 +573,18 @@ const Containers: React.FC = () => {
                   payload = { khoId: Number(wfForm.khoId) };
                 } else if (wfAction.type === "start-transport") {
                   if (!wfForm.chuyenDiId || !wfForm.phuongTienId) return alert("Vui lòng chọn chuyến đi và phương tiện!");
+
+                  const originalVehicleId = wfAction.container.PhuongTienID;
+                  const newVehicleId = Number(wfForm.phuongTienId);
+
+                  if (originalVehicleId && originalVehicleId !== newVehicleId) {
+                    const confirmChange = window.confirm("Bạn muốn chuyển sang phương tiện này?");
+                    if (!confirmChange) return;
+                  }
+
                   payload = {
                     chuyenDiId: Number(wfForm.chuyenDiId),
-                    phuongTienId: Number(wfForm.phuongTienId),
+                    phuongTienId: newVehicleId,
                     khoIdCu: wfAction.container.KhoID
                   };
                 }
