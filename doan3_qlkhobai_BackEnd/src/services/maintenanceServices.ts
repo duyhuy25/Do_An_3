@@ -47,7 +47,7 @@ export const updateMaintenanceService = async (id: number, data: any) => {
     await updateVehicleStatus(data.PhuongTienID, "Bảo trì");
   } else if (data.TrangThai === "Hoàn thành") {
     await updateVehicleStatus(data.PhuongTienID, "Sẵn sàng");
-    
+
     // Tự động tạo chi phí nếu có giá tiền
     if (data.ChiPhi > 0) {
       const vehicle = await getVehicleById(data.PhuongTienID);

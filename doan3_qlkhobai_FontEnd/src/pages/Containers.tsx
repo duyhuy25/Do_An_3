@@ -28,6 +28,7 @@ interface HopDongOption { HopDongID: number; MaHopDong?: string; }
 const Containers: React.FC = () => {
 
   const [containers, setContainers] = useState<Container[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [loaiHangs, setLoaiHangs] = useState<LoaiHangOption[]>([]);
   const [khos, setKhos] = useState<KhoOption[]>([]);
   const [phuongTiens, setPhuongTiens] = useState<PhuongTienOption[]>([]);
@@ -122,7 +123,7 @@ const Containers: React.FC = () => {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, nguoiCapNhat: "Quản lý" })
+        body: JSON.stringify({ ...payload, nguoiCapNhat: currentUser.HoTen || currentUser.Username || "Quản lý", UserID: currentUser.UserID })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Lỗi xử lý");
@@ -329,9 +330,24 @@ const Containers: React.FC = () => {
                 <td>
                   {gps ? (
                     <div style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
-                      📍 {gps.ViDo.toFixed(2)}, {gps.KinhDo.toFixed(2)} <br />
-                      ⚡ <span style={{ color: isOverspeed ? 'red' : 'inherit', fontWeight: isOverspeed ? 'bold' : 'normal' }}>
-                        {gps.TocDo} km/h
+                      <a 
+                        href={`https://www.google.com/maps?q=${gps.ViDo},${gps.KinhDo}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{ textDecoration: 'none', color: '#007bff' }}
+                        title="Xem trên bản đồ"
+                      >
+                        📍 {gps.ViDo.toFixed(4)}, {gps.KinhDo.toFixed(4)}
+                      </a>
+                      <br />
+                      ⚡ <span style={{ 
+                        color: isOverspeed ? 'red' : '#28a745', 
+                        fontWeight: isOverspeed ? 'bold' : 'normal',
+                        backgroundColor: isOverspeed ? '#fff5f5' : 'transparent',
+                        padding: isOverspeed ? '2px 4px' : '0',
+                        borderRadius: '3px'
+                      }}>
+                        {gps.TocDo} km/h {isOverspeed && "⚠️"}
                       </span>
                     </div>
                   ) : "-"}

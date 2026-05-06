@@ -198,23 +198,23 @@ const Contracts: React.FC = () => {
       </div>
 
       <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Mã HĐ</th>
-          <th>Khách hàng</th>
-          <th>Ngày ký</th>
-          <th>Hết hạn</th>
-          <th>Loại DV</th>
-          <th>Giá trị</th>
-          <th>Trạng thái</th>
-          <th>File</th>
-          <th>Mô tả</th>
-          <th>Tác vụ</th>
-        </tr>
-      </thead>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Mã HĐ</th>
+            <th>Khách hàng</th>
+            <th>Ngày ký</th>
+            <th>Hết hạn</th>
+            <th>Loại DV</th>
+            <th>Giá trị</th>
+            <th>Trạng thái</th>
+            <th>File</th>
+            <th>Mô tả</th>
+            <th>Tác vụ</th>
+          </tr>
+        </thead>
 
-      <tbody>
+        <tbody>
           {contracts.map(c => (
             <tr key={c.HopDongID} onClick={() => handleOpenEdit(c)}>
               <td>{formatID(c.HopDongID)}</td>
@@ -247,11 +247,11 @@ const Contracts: React.FC = () => {
               <td>{c.MoTa || "-"}</td>
 
               <td className="actions">
-              <div className="td-actions">
-                <button className="btn-edit" onClick={(e)=>{e.stopPropagation();handleOpenEdit(c);}}>Sửa</button>
-                <button className="btn-delete" onClick={(e)=>{e.stopPropagation();handleDelete(c.HopDongID);}}>Xóa</button>
-              </div>
-            </td>
+                <div className="td-actions">
+                  <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(c); }}>Sửa</button>
+                  <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(c.HopDongID); }}>Xóa</button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

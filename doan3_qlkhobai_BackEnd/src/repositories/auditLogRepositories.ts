@@ -4,7 +4,12 @@ import { poolPromise } from "../config/db";
 export const getAllAuditLogs = async () => {
   const pool = await poolPromise;
   const result = await pool.request().query(`
-    SELECT * FROM AuditLog ORDER BY LogID DESC
+    SELECT 
+      a.*, 
+      u.Username 
+    FROM AuditLog a
+    LEFT JOIN Users u ON a.UserID = u.UserID
+    ORDER BY a.LogID DESC
   `);
   return result.recordset;
 };
@@ -52,14 +57,20 @@ export const searchAuditLogByKeyword = async (searchTerm = "") => {
   const request = pool.request();
   const term = searchTerm?.trim();
 
-  let query = `SELECT * FROM AuditLog`;
+  let query = `
+    SELECT 
+      a.*, 
+      u.Username 
+    FROM AuditLog a
+    LEFT JOIN Users u ON a.UserID = u.UserID
+  `;
 
   if (term) {
-    query += ` WHERE HanhDong LIKE @search OR Bang LIKE @search`;
+    query += ` WHERE a.HanhDong LIKE @search OR a.Bang LIKE @search OR u.Username LIKE @search`;
     request.input("search", sql.NVarChar(100), `%${term}%`);
   }
 
-  query += " ORDER BY LogID DESC";
+  query += " ORDER BY a.LogID DESC";
 
   const result = await request.query(query);
   return result.recordset;

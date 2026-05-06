@@ -162,10 +162,11 @@ const Maintenance: React.FC = () => {
         fetchData(search);
         alert("Cập nhật thành công! Trạng thái xe đã được đồng bộ.");
       } else {
-        alert("Lỗi server");
+        const errorData = await res.json();
+        alert("Lỗi: " + (errorData.message || "Lỗi server"));
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message);
     }
   };
 
@@ -227,28 +228,28 @@ const Maintenance: React.FC = () => {
               <td>{m.ChiPhi.toLocaleString("vi-VN")} đ</td>
               <td>{m.TrangThai}</td>
               <td className="actions">
-              <div className="td-actions">
-                <button
-                  className="btn-edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEdit(m);
-                  }}
-                >
-                  Sửa
-                </button>
+                <div className="td-actions">
+                  <button
+                    className="btn-edit"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEdit(m);
+                    }}
+                  >
+                    Sửa
+                  </button>
 
-                <button
-                  className="btn-delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(m.BaoTriID);
-                  }}
-                >
-                  Xóa
-                </button>
-              </div>
-            </td>
+                  <button
+                    className="btn-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(m.BaoTriID);
+                    }}
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

@@ -278,56 +278,58 @@ const Costs: React.FC = () => {
         </thead>
 
         <tbody>
-          {costs.map((c) => {
-            const hd = hopDongMap[c.HopDongID];
+          {costs
+            .filter(c => c.HopDongID !== null) // Chỉ hiển thị chi phí có hợp đồng (Khách hàng)
+            .map((c) => {
+              const hd = hopDongMap[c.HopDongID];
 
-            return (
-              <tr key={c.ChiPhiID} onClick={() => handleOpenEdit(c)}>
-                <td>{formatID(c.ChiPhiID)}</td>
-                <td>
-                  {hd
-                    ? hd.MaHopDong || `HD${hd.HopDongID}`
-                    : c.HopDongID}
-                </td>
-                <td>
-                  {c.ContainerID && containerMap[c.ContainerID]
-                    ? containerMap[c.ContainerID].formattedID
-                    : containers
+              return (
+                <tr key={c.ChiPhiID} onClick={() => handleOpenEdit(c)}>
+                  <td>{formatID(c.ChiPhiID)}</td>
+                  <td>
+                    {hd
+                      ? hd.MaHopDong || `HD${hd.HopDongID}`
+                      : c.HopDongID}
+                  </td>
+                  <td>
+                    {c.ContainerID && containerMap[c.ContainerID]
+                      ? containerMap[c.ContainerID].formattedID
+                      : containers
                         .filter((ct) => ct.HopDongID === c.HopDongID)
                         .map((ct) => ct.formattedID)
                         .join(", ") || "-"}
-                </td>
-                <td>{formatSupplier(c.NhaCungCap)}</td>
-                <td>{c.LoaiChiPhi}</td>
-                <td>{c.SoTien.toLocaleString("vi-VN")} đ</td>
-                <td>{c.ThuKhachHang}</td>
+                  </td>
+                  <td>{formatSupplier(c.NhaCungCap)}</td>
+                  <td>{c.LoaiChiPhi}</td>
+                  <td>{c.SoTien.toLocaleString("vi-VN")} đ</td>
+                  <td>{c.ThuKhachHang}</td>
 
-                <td className="actions">
-                  <div className="td-actions">
-                    <button
-                      className="btn-edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenEdit(c);
-                      }}
-                    >
-                      Sửa
-                    </button>
+                  <td className="actions">
+                    <div className="td-actions">
+                      <button
+                        className="btn-edit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEdit(c);
+                        }}
+                      >
+                        Sửa
+                      </button>
 
-                    <button
-                      className="btn-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(c.ChiPhiID);
-                      }}
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+                      <button
+                        className="btn-delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(c.ChiPhiID);
+                        }}
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       </table>
 
@@ -360,10 +362,10 @@ const Costs: React.FC = () => {
               {containers
                 .filter((ct) => !form.HopDongID || ct.HopDongID === Number(form.HopDongID))
                 .map((ct) => (
-                <option key={ct.ContainerID} value={ct.ContainerID}>
-                  {ct.formattedID}
-                </option>
-              ))}
+                  <option key={ct.ContainerID} value={ct.ContainerID}>
+                    {ct.formattedID}
+                  </option>
+                ))}
             </select>
 
             <label>Nhà cung cấp (Đối tác chi trả)</label>

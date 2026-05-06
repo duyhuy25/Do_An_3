@@ -12,36 +12,33 @@ export const getAllMaintenance = async () => {
 export const createMaintenance = async (data: any) => {
   const pool = await poolPromise;
   await pool.request()
-    .input("PhuongTienID", data.PhuongTienID)
-    .input("NgayBaoTri", data.NgayBaoTri)
-    .input("NoiDung", data.NoiDung)
-    .input("ChiPhi", data.ChiPhi)
-    .input("TrangThai", data.TrangThai)
-    .input("NCCID", data.NCCID || null)
+    .input("PhuongTienID", sql.Int, data.PhuongTienID)
+    .input("NgayBaoTri", sql.Date, data.NgayBaoTri)
+    .input("NoiDung", sql.NVarChar(500), data.NoiDung)
+    .input("ChiPhi", sql.Decimal(18, 2), data.ChiPhi)
+    .input("TrangThai", sql.NVarChar(50), data.TrangThai)
     .query(`
-      INSERT INTO BaoTriPhuongTien (PhuongTienID, NgayBaoTri, NoiDung, ChiPhi, TrangThai, NCCID)
-      VALUES (@PhuongTienID, @NgayBaoTri, @NoiDung, @ChiPhi, @TrangThai, @NCCID)
+      INSERT INTO BaoTriPhuongTien (PhuongTienID, NgayBaoTri, NoiDung, ChiPhi, TrangThai)
+      VALUES (@PhuongTienID, @NgayBaoTri, @NoiDung, @ChiPhi, @TrangThai)
     `);
 };
 
 export const updateMaintenanceById = async (id: number, data: any) => {
   const pool = await poolPromise;
   await pool.request()
-    .input("BaoTriID", id)
-    .input("PhuongTienID", data.PhuongTienID)
-    .input("NgayBaoTri", data.NgayBaoTri)
-    .input("NoiDung", data.NoiDung)
-    .input("ChiPhi", data.ChiPhi)
-    .input("TrangThai", data.TrangThai)
-    .input("NCCID", data.NCCID || null)
+    .input("BaoTriID", sql.Int, id)
+    .input("PhuongTienID", sql.Int, data.PhuongTienID)
+    .input("NgayBaoTri", sql.Date, data.NgayBaoTri)
+    .input("NoiDung", sql.NVarChar(500), data.NoiDung)
+    .input("ChiPhi", sql.Decimal(18, 2), data.ChiPhi)
+    .input("TrangThai", sql.NVarChar(50), data.TrangThai)
     .query(`
       UPDATE BaoTriPhuongTien SET
         PhuongTienID = @PhuongTienID,
         NgayBaoTri = @NgayBaoTri,
         NoiDung = @NoiDung,
         ChiPhi = @ChiPhi,
-        TrangThai = @TrangThai,
-        NCCID = @NCCID
+        TrangThai = @TrangThai
       WHERE BaoTriID = @BaoTriID
     `);
 };
