@@ -49,7 +49,8 @@ export const deleteUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "ID không hợp lệ" });
     }
 
-    await deleteUserService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteUserService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error: any) {
     console.error("Error deleting user:", error);

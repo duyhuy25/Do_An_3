@@ -31,75 +31,82 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
 
     const fetchData = async () => {
-      const todayStr = new Date().toISOString().split('T')[0];
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
 
-      const invoices: Invoice[] = await fetch("http://localhost:5000/api/invoice/invoice")
-        .then(res => res.json());
+        const invoicesRes = await fetch("http://localhost:5000/api/invoice/invoice");
+        if (!invoicesRes.ok) throw new Error("Lỗi tải hóa đơn");
+        const invoices: Invoice[] = await invoicesRes.json();
 
-      const costs: any[] = await fetch("http://localhost:5000/api/cost/cost")
-        .then(res => res.json());
+        const costsRes = await fetch("http://localhost:5000/api/cost/cost");
+        if (!costsRes.ok) throw new Error("Lỗi tải chi phí");
+        const costs: any[] = await costsRes.json();
 
-      const contracts: any[] = await fetch("http://localhost:5000/api/contract/contract")
-        .then(res => res.json());
+        const contractsRes = await fetch("http://localhost:5000/api/contract/contract");
+        if (!contractsRes.ok) throw new Error("Lỗi tải hợp đồng");
+        const contracts: any[] = await contractsRes.json();
 
-      // Today Stats
-      const revToday = invoices
-        .filter(i => i.NgayLap && i.NgayLap.split('T')[0] === todayStr)
-        .reduce((sum, i) => sum + i.SoTien, 0);
+        // Today Stats
+        const revToday = invoices
+          .filter(i => i.NgayLap && i.NgayLap.split('T')[0] === todayStr)
+          .reduce((sum, i) => sum + i.SoTien, 0);
 
-      const cToday = costs
-        .filter(c => c.NgayPhatSinh && c.NgayPhatSinh.split('T')[0] === todayStr)
-        .reduce((sum, c) => sum + c.SoTien, 0);
+        const cToday = costs
+          .filter(c => c.NgayPhatSinh && c.NgayPhatSinh.split('T')[0] === todayStr)
+          .reduce((sum, c) => sum + c.SoTien, 0);
 
-      const contToday = contracts
-        .filter(h => h.NgayKy && h.NgayKy.split('T')[0] === todayStr)
-        .length;
+        const contToday = contracts
+          .filter(h => h.NgayKy && h.NgayKy.split('T')[0] === todayStr)
+          .length;
 
-      // All Time Stats
-      const totalRev = invoices.reduce((sum, i) => sum + i.SoTien, 0);
-      const totalC = costs.reduce((sum, c) => sum + c.SoTien, 0);
-      const internalC = costs
-        .filter(c => c.ThuKhachHang === "Không")
-        .reduce((sum, c) => sum + c.SoTien, 0);
+        // All Time Stats
+        const totalRev = invoices.reduce((sum, i) => sum + i.SoTien, 0);
+        const totalC = costs.reduce((sum, c) => sum + c.SoTien, 0);
+        const internalC = costs
+          .filter(c => c.ThuKhachHang === "Không")
+          .reduce((sum, c) => sum + c.SoTien, 0);
 
-      setRevenueToday(revToday);
-      setCostToday(cToday);
-      setContractsToday(contToday);
-      
-      setTotalRevenue(totalRev);
-      setTotalCost(totalC);
-      setTotalInternalCost(internalC);
+        setRevenueToday(revToday);
+        setCostToday(cToday);
+        setContractsToday(contToday);
+        
+        setTotalRevenue(totalRev);
+        setTotalCost(totalC);
+        setTotalInternalCost(internalC);
 
-      const monthMap: any = {};
-      const yearMap: any = {};
+        const monthMap: any = {};
+        const yearMap: any = {};
 
-      invoices.forEach(i => {
-        if (!i.NgayLap) return;
-        const date = new Date(i.NgayLap);
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
+        invoices.forEach(i => {
+          if (!i.NgayLap) return;
+          const date = new Date(i.NgayLap);
+          const year = date.getFullYear();
+          const month = date.getMonth() + 1;
 
-        const monthKey = `${year}-${month}`;
+          const monthKey = `${year}-${month}`;
 
-        if (!monthMap[monthKey]) monthMap[monthKey] = 0;
-        if (!yearMap[year]) yearMap[year] = 0;
+          if (!monthMap[monthKey]) monthMap[monthKey] = 0;
+          if (!yearMap[year]) yearMap[year] = 0;
 
-        monthMap[monthKey] += i.SoTien;
-        yearMap[year] += i.SoTien;
-      });
+          monthMap[monthKey] += i.SoTien;
+          yearMap[year] += i.SoTien;
+        });
 
-      const monthArr = Object.keys(monthMap).map(k => ({
-        thang: k,
-        doanhThu: monthMap[k]
-      }));
+        const monthArr = Object.keys(monthMap).map(k => ({
+          thang: k,
+          doanhThu: monthMap[k]
+        }));
 
-      const yearArr = Object.keys(yearMap).map(k => ({
-        nam: k,
-        doanhThu: yearMap[k]
-      }));
+        const yearArr = Object.keys(yearMap).map(k => ({
+          nam: k,
+          doanhThu: yearMap[k]
+        }));
 
-      setMonthlyData(monthArr);
-      setYearlyData(yearArr);
+        setMonthlyData(monthArr);
+        setYearlyData(yearArr);
+      } catch (err) {
+        console.error("Dashboard Fetch Error:", err);
+      }
     };
 
     fetchData();

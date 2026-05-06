@@ -7,6 +7,7 @@ import {
 } from "../repositories/maintenanceRepositories";
 import { updateVehicleStatus, getVehicleById } from "../repositories/vehicleRepositories";
 import { createCost } from "../repositories/costRepositories";
+import { createAuditLog } from "../repositories/auditLogRepositories";
 
 export const fetchMaintenance = async () => {
   return await getAllMaintenance();
@@ -36,6 +37,14 @@ export const addMaintenanceService = async (data: any) => {
     }
   }
 
+  if (data.UserID) {
+    await createAuditLog({
+      UserID: data.UserID,
+      HanhDong: `Thêm bảo trì xe (ID: ${data.PhuongTienID})`,
+      Bang: "BaoTriPhuongTien"
+    });
+  }
+
   return result;
 };
 
@@ -62,6 +71,14 @@ export const updateMaintenanceService = async (id: number, data: any) => {
         NhaCungCap: data.NCCID ? data.NCCID.toString() : null
       });
     }
+  }
+
+  if (data.UserID) {
+    await createAuditLog({
+      UserID: data.UserID,
+      HanhDong: `Cập nhật bảo trì ID: ${id} sang ${data.TrangThai}`,
+      Bang: "BaoTriPhuongTien"
+    });
   }
 
   return result;

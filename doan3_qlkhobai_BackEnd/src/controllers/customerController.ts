@@ -41,7 +41,8 @@ export const updateCustomer = async (req: Request, res: Response) => {
 export const deleteCustomer = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await deleteCustomerService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteCustomerService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error) {
     console.error(error);

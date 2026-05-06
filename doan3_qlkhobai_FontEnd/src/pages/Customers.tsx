@@ -11,6 +11,7 @@ interface Customer {
 
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -101,7 +102,7 @@ const Customers: React.FC = () => {
       return;
     }
 
-    const body = { ...form };
+    const body = { ...form, UserID: currentUser.UserID };
 
     try {
       let res: Response;
@@ -136,7 +137,7 @@ const Customers: React.FC = () => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/customer/customer/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/customer/customer/${id}?userId=${currentUser.UserID}`, {
         method: "DELETE",
       });
 

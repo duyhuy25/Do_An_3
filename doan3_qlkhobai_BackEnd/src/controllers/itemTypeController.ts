@@ -41,7 +41,8 @@ export const updateItemtype = async (req: Request, res: Response) => {
 export const deleteItemtype = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await deleteItemTypeService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteItemTypeService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error) {
     console.error(error);

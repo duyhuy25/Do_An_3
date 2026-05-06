@@ -29,7 +29,7 @@ export const createContainer = async (data: any) => {
 
   if (!data.PhuongTienID) {
     const autoMaContainer = data.MaContainer ? data.MaContainer : ("CONT-" + new Date().getTime().toString().slice(-6));
-    await pool.request()
+    const res = await pool.request()
       .input("HopDongID", sql.Int, data.HopDongID)
       .input("LoaiHangID", sql.Int, data.LoaiHangID)
       .input("TrongLuong", sql.Decimal(10, 2), data.TrongLuong)
@@ -50,13 +50,14 @@ export const createContainer = async (data: any) => {
           MaContainer, KichThuoc, LoaiContainer, NgayDongHang, NgayMoHang,
           TinhTrangVo, NhietDoBaoQuan, DoAm
         )
+        OUTPUT INSERTED.ContainerID
         VALUES (
           @HopDongID, @LoaiHangID, @TrongLuong, @TrangThai, @KhoID, @PhuongTienID,
           @MaContainer, @KichThuoc, @LoaiContainer, @NgayDongHang, @NgayMoHang,
           @TinhTrangVo, @NhietDoBaoQuan, @DoAm
         )
       `);
-    return;
+    return { ContainerID: res.recordset[0].ContainerID };
   }
 
   const transaction = new sql.Transaction(pool);
@@ -130,6 +131,7 @@ export const createContainer = async (data: any) => {
       `);
 
     await transaction.commit();
+    return { ContainerID: containerId };
   } catch (error) {
     await transaction.rollback();
     throw error;

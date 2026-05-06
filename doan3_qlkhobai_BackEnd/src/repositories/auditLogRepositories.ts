@@ -6,7 +6,7 @@ export const getAllAuditLogs = async () => {
   const result = await pool.request().query(`
     SELECT 
       a.*, 
-      u.Username 
+      u.HoTen 
     FROM AuditLog a
     LEFT JOIN Users u ON a.UserID = u.UserID
     ORDER BY a.LogID DESC
@@ -60,13 +60,13 @@ export const searchAuditLogByKeyword = async (searchTerm = "") => {
   let query = `
     SELECT 
       a.*, 
-      u.Username 
+      u.HoTen 
     FROM AuditLog a
     LEFT JOIN Users u ON a.UserID = u.UserID
   `;
 
   if (term) {
-    query += ` WHERE a.HanhDong LIKE @search OR a.Bang LIKE @search OR u.Username LIKE @search`;
+    query += ` WHERE a.HanhDong LIKE @search OR a.Bang LIKE @search OR u.HoTen LIKE @search`;
     request.input("search", sql.NVarChar(100), `%${term}%`);
   }
 

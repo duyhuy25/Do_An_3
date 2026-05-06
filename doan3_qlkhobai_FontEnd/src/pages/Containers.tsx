@@ -136,7 +136,7 @@ const Containers: React.FC = () => {
   };
 
   const handleSimpleWorkflow = (action: string, id: number) => {
-    executeWorkflow(`http://localhost:5000/api/workflow/${action}/${id}`);
+    executeWorkflow(`http://localhost:5000/api/workflow/${action}/${id}`, { UserID: currentUser.UserID });
   };
 
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -215,6 +215,7 @@ const Containers: React.FC = () => {
       TinhTrangVo: form.TinhTrangVo || null,
       NhietDoBaoQuan: form.NhietDoBaoQuan ? Number(form.NhietDoBaoQuan) : null,
       DoAm: form.DoAm ? Number(form.DoAm) : null,
+      UserID: currentUser.UserID
     };
 
     try {
@@ -239,7 +240,7 @@ const Containers: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Xóa container này?")) return;
 
-    await fetch(`http://localhost:5000/api/container/container/${id}`, {
+    await fetch(`http://localhost:5000/api/container/container/${id}?userId=${currentUser.UserID}`, {
       method: "DELETE"
     });
 

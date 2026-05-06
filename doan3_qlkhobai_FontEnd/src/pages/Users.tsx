@@ -25,6 +25,7 @@ interface Role {
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [roles, setRoles] = useState<Role[]>([]);
   const [search, setSearch] = useState("");
 
@@ -180,7 +181,8 @@ const Users: React.FC = () => {
       DiaChi: form.DiaChi || null,
       NgaySinh: form.NgaySinh || null,
       GioiTinh: form.GioiTinh,
-      Avatar: form.Avatar || null
+      Avatar: form.Avatar || null,
+      UserID: currentUser.UserID
     };
 
     if (form.PasswordHash) payload.PasswordHash = form.PasswordHash;
@@ -209,7 +211,7 @@ const Users: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Xóa?")) return;
 
-    await fetch(`http://localhost:5000/api/user/user/${id}`, {
+    await fetch(`http://localhost:5000/api/user/user/${id}?userId=${currentUser.UserID}`, {
       method: "DELETE"
     });
 

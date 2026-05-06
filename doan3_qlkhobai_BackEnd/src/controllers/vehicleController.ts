@@ -49,7 +49,8 @@ export const deleteVehicle = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "ID không hợp lệ" });
     }
 
-    await deleteVehicleService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteVehicleService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error) {
     console.error(error);

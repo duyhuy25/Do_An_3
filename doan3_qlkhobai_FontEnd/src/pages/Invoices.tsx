@@ -25,6 +25,7 @@ interface HopDongOption {
 
 const Invoices: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [hopDongs, setHopDongs] = useState<HopDongOption[]>([]);
   const [paymentsMap, setPaymentsMap] = useState<Record<number, Payment[]>>({});
 
@@ -186,6 +187,7 @@ const Invoices: React.FC = () => {
       SoTien: Number(form.SoTien),
       PhanTramDaThanhToan: 0, // Frontend now computes this
       NgayLap: form.NgayLap || null,
+      UserID: currentUser.UserID
     };
 
     try {
@@ -218,7 +220,7 @@ const Invoices: React.FC = () => {
     if (!window.confirm("Bạn chắc chắn muốn xóa hóa đơn này (và mọi thanh toán liên quan)?")) return;
 
     try {
-      await fetch(`http://localhost:5000/api/invoice/invoice/${id}`, {
+      await fetch(`http://localhost:5000/api/invoice/invoice/${id}?userId=${currentUser.UserID}`, {
         method: "DELETE",
       });
 
@@ -266,6 +268,7 @@ const Invoices: React.FC = () => {
       SoTien: Number(paymentForm.SoTien),
       PhuongThuc: paymentForm.PhuongThuc || "Khác",
       ThoiGian: paymentForm.ThoiGian || new Date().toISOString(),
+      UserID: currentUser.UserID
     };
 
     try {
@@ -295,7 +298,7 @@ const Invoices: React.FC = () => {
     if (!window.confirm("Xóa giao dịch thanh toán này?")) return;
 
     try {
-      await fetch(`http://localhost:5000/api/payment/${paymentId}`, {
+      await fetch(`http://localhost:5000/api/payment/${paymentId}?userId=${currentUser.UserID}`, {
         method: "DELETE",
       });
 

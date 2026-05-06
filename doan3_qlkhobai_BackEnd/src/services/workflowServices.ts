@@ -1,7 +1,8 @@
 import sql from "mssql";
 import { poolPromise } from "../config/db";
+import { createAuditLog } from "../repositories/auditLogRepositories";
     // Bắt đầu đóng hàng
-export const workflowStartPacking = async (containerId: number, nguoiCapNhat: string) => {
+export const workflowStartPacking = async (containerId: number, nguoiCapNhat: string, userId?: number) => {
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
   
@@ -9,7 +10,7 @@ export const workflowStartPacking = async (containerId: number, nguoiCapNhat: st
   try {
     const request = transaction.request();
 
-        // 1. Lấy trạng thái hiện tại của container
+    // 1. Lấy trạng thái hiện tại của container
     const containerRes = await request
       .input("ContainerID", sql.Int, containerId)
       .query(`SELECT TrangThai, KhoID FROM Container WHERE ContainerID = @ContainerID`);
@@ -17,7 +18,7 @@ export const workflowStartPacking = async (containerId: number, nguoiCapNhat: st
     if (containerRes.recordset.length === 0) throw new Error("Container not found");
     const trangThaiCu = containerRes.recordset[0].TrangThai;
 
-          // 2. Cập nhật trạng thái container sang "Đang đóng hàng"
+    // 2. Cập nhật trạng thái container sang "Đang đóng hàng"
     await request.query(`
       UPDATE Container 
       SET TrangThai = N'Đang đóng hàng'
@@ -37,6 +38,16 @@ export const workflowStartPacking = async (containerId: number, nguoiCapNhat: st
       `);
 
     await transaction.commit();
+
+    // Ghi nhật ký hệ thống
+    if (userId) {
+       await createAuditLog({
+         UserID: userId,
+         HanhDong: "Bắt đầu đóng hàng",
+         Bang: "Container"
+       });
+    }
+
     return { success: true, message: "Started packing successfully" };
   } catch (error) {
     await transaction.rollback();
@@ -44,7 +55,7 @@ export const workflowStartPacking = async (containerId: number, nguoiCapNhat: st
   }
 };
 
-export const workflowFinishPacking = async (containerId: number, nguoiCapNhat: string) => {
+export const workflowFinishPacking = async (containerId: number, nguoiCapNhat: string, userId?: number) => {
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
   
@@ -77,6 +88,15 @@ export const workflowFinishPacking = async (containerId: number, nguoiCapNhat: s
       `);
 
     await transaction.commit();
+
+    if (userId) {
+      await createAuditLog({
+        UserID: userId,
+        HanhDong: "Hoàn thành đóng hàng",
+        Bang: "Container"
+      });
+    }
+
     return { success: true, message: "Finished packing successfully" };
   } catch (error) {
     await transaction.rollback();
@@ -84,7 +104,7 @@ export const workflowFinishPacking = async (containerId: number, nguoiCapNhat: s
   }
 };
 
-export const workflowEnterWarehouse = async (containerId: number, khoId: number, nguoiCapNhat: string) => {
+export const workflowEnterWarehouse = async (containerId: number, khoId: number, nguoiCapNhat: string, userId?: number) => {
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
   
@@ -128,6 +148,15 @@ export const workflowEnterWarehouse = async (containerId: number, khoId: number,
       `);
 
     await transaction.commit();
+
+    if (userId) {
+      await createAuditLog({
+        UserID: userId,
+        HanhDong: `Nhập kho (ID: ${khoId})`,
+        Bang: "Container"
+      });
+    }
+
     return { success: true, message: "Entered warehouse successfully" };
   } catch (error) {
     await transaction.rollback();
@@ -135,7 +164,7 @@ export const workflowEnterWarehouse = async (containerId: number, khoId: number,
   }
 };
 
-export const workflowStartTransport = async (containerId: number, chuyenDiId: number, phuongTienId: number, khoIdCu: number, nguoiCapNhat: string) => {
+export const workflowStartTransport = async (containerId: number, chuyenDiId: number, phuongTienId: number, khoIdCu: number, nguoiCapNhat: string, userId?: number) => {
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
   
@@ -216,6 +245,15 @@ export const workflowStartTransport = async (containerId: number, chuyenDiId: nu
       `);
 
     await transaction.commit();
+
+    if (userId) {
+      await createAuditLog({
+        UserID: userId,
+        HanhDong: "Bắt đầu vận chuyển",
+        Bang: "Container"
+      });
+    }
+
     return { success: true, message: "Started transport successfully" };
   } catch (error) {
     await transaction.rollback();
@@ -223,7 +261,7 @@ export const workflowStartTransport = async (containerId: number, chuyenDiId: nu
   }
 };
 
-export const workflowVehicleArrived = async (containerId: number, chuyenDiId: number, phuongTienId: number, nguoiCapNhat: string) => {
+export const workflowVehicleArrived = async (containerId: number, chuyenDiId: number, phuongTienId: number, nguoiCapNhat: string, userId?: number) => {
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
   
@@ -258,6 +296,15 @@ export const workflowVehicleArrived = async (containerId: number, chuyenDiId: nu
       `);
 
     await transaction.commit();
+
+    if (userId) {
+      await createAuditLog({
+        UserID: userId,
+        HanhDong: "Xe đã đến nơi",
+        Bang: "Container"
+      });
+    }
+
     return { success: true, message: "Vehicle arrived successfully" };
   } catch (error) {
     await transaction.rollback();
@@ -265,7 +312,7 @@ export const workflowVehicleArrived = async (containerId: number, chuyenDiId: nu
   }
 };
 
-export const workflowCreateContractWithContainer = async (data: any, nguoiCapNhat: string = "System") => {
+export const workflowCreateContractWithContainer = async (data: any, nguoiCapNhat: string = "System", userId?: number) => {
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
   
@@ -342,6 +389,16 @@ export const workflowCreateContractWithContainer = async (data: any, nguoiCapNha
       `);
 
     await transaction.commit();
+
+    const finalUserId = userId || data.UserID;
+    if (finalUserId) {
+      await createAuditLog({
+        UserID: finalUserId,
+        HanhDong: "Tạo hợp đồng & Container",
+        Bang: "HopDong"
+      });
+    }
+
     return { 
       success: true, 
       message: "Thêm hợp đồng và tự động tạo Container (Rỗng) thành công.",
@@ -353,7 +410,7 @@ export const workflowCreateContractWithContainer = async (data: any, nguoiCapNha
   }
 };
 
-export const workflowDeliverContainer = async (containerId: number, nguoiCapNhat: string) => {
+export const workflowDeliverContainer = async (containerId: number, nguoiCapNhat: string, userId?: number) => {
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
   
@@ -453,6 +510,15 @@ export const workflowDeliverContainer = async (containerId: number, nguoiCapNhat
       `);
 
     await transaction.commit();
+
+    if (userId) {
+      await createAuditLog({
+        UserID: userId,
+        HanhDong: "Giao hàng hoàn tất",
+        Bang: "Container"
+      });
+    }
+
     return { success: true, message: "Delivered container successfully" };
   } catch (error) {
     await transaction.rollback();
@@ -460,7 +526,7 @@ export const workflowDeliverContainer = async (containerId: number, nguoiCapNhat
   }
 };
 
-export const workflowCancelContainer = async (containerId: number, nguoiCapNhat: string = "System") => {
+export const workflowCancelContainer = async (containerId: number, nguoiCapNhat: string = "System", userId?: number) => {
   const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
   
@@ -544,6 +610,15 @@ export const workflowCancelContainer = async (containerId: number, nguoiCapNhat:
       `);
 
     await transaction.commit();
+
+    if (userId) {
+      await createAuditLog({
+        UserID: userId,
+        HanhDong: "Hủy đơn hàng",
+        Bang: "Container"
+      });
+    }
+
     return { success: true, message: "Đã hủy đơn thành công" };
   } catch (error) {
     await transaction.rollback();

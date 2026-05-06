@@ -15,6 +15,7 @@ interface Warehouse {
 
 const Warehouses: React.FC = () => {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -121,7 +122,8 @@ const Warehouses: React.FC = () => {
       ...form,
       SucChua: Number(form.SucChua || 0),
       SoLuongContainer: Number(form.SoLuongContainer || 0),
-      DienTich: Number(form.DienTich || 0)
+      DienTich: Number(form.DienTich || 0),
+      UserID: currentUser.UserID
     };
 
     try {
@@ -161,7 +163,7 @@ const Warehouses: React.FC = () => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/warehouse/warehouse/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/warehouse/warehouse/${id}?userId=${currentUser.UserID}`, {
         method: "DELETE"
       });
 

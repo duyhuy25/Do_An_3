@@ -18,6 +18,7 @@ interface Vehicle {
 
 const Vehicles: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -137,7 +138,8 @@ const Vehicles: React.FC = () => {
     const payload = {
       ...form,
       TaiTrong: Number(form.TaiTrong || 0),
-      NamSanXuat: Number(form.NamSanXuat || 0)
+      NamSanXuat: Number(form.NamSanXuat || 0),
+      UserID: currentUser.UserID
     };
 
     try {
@@ -164,7 +166,7 @@ const Vehicles: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Xóa?")) return;
 
-    await fetch(`http://localhost:5000/api/vehicle/vehicle/${id}`, {
+    await fetch(`http://localhost:5000/api/vehicle/vehicle/${id}?userId=${currentUser.UserID}`, {
       method: "DELETE"
     });
 

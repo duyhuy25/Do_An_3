@@ -41,7 +41,8 @@ export const updateTrip = async (req: Request, res: Response) => {
 export const deleteTrip = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await deleteTripService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteTripService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error) {
     console.error(error);

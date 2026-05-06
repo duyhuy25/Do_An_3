@@ -41,7 +41,8 @@ export const updatePort = async (req: Request, res: Response) => {
 export const deletePort = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await deletePortService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deletePortService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error) {
     console.error(error);

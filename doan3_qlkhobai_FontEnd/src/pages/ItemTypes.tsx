@@ -10,6 +10,7 @@ interface ItemType {
 
 const ItemTypes: React.FC = () => {
   const [types, setTypes] = useState<ItemType[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -90,7 +91,7 @@ const ItemTypes: React.FC = () => {
       return;
     }
 
-    const body = { ...form };
+    const body = { ...form, UserID: currentUser.UserID };
 
     try {
       const url = isEdit && selected
@@ -119,7 +120,7 @@ const ItemTypes: React.FC = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/itemtype/itemtype/${id}`,
+        `http://localhost:5000/api/itemtype/itemtype/${id}?userId=${currentUser.UserID}`,
         { method: "DELETE" }
       );
       if (res.ok) fetchData(search);

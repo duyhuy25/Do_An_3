@@ -7,6 +7,7 @@ interface AuditLog {
   HanhDong: string;
   Bang: string;
   ThoiGian: string;
+  HoTen?: string;
 }
 
 const AuditLogs: React.FC = () => {
@@ -87,7 +88,7 @@ const AuditLogs: React.FC = () => {
           {logs.map(l => (
             <tr key={l.LogID}>
               <td>{l.LogID}</td>
-              <td>{formatUser(l.UserID)}</td>
+              <td>{l.HoTen || formatUser(l.UserID)}</td>
               <td style={{ color: getActionColor(l.HanhDong), fontWeight: "bold" }}>
                 {l.HanhDong}
               </td>

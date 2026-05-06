@@ -26,6 +26,7 @@ const Maintenance: React.FC = () => {
   const [list, setList] = useState<Maintenance[]>([]);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -143,7 +144,8 @@ const Maintenance: React.FC = () => {
       NoiDung: form.NoiDung,
       ChiPhi: Number(form.ChiPhi || 0),
       TrangThai: form.TrangThai,
-      NCCID: form.NCCID ? Number(form.NCCID) : null
+      NCCID: form.NCCID ? Number(form.NCCID) : null,
+      UserID: currentUser.UserID
     };
 
     try {

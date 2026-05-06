@@ -12,6 +12,7 @@ interface Supplier {
 
 const Suppliers: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -104,7 +105,7 @@ const Suppliers: React.FC = () => {
       const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, UserID: currentUser.UserID })
       });
 
       if (res.ok) {
@@ -122,7 +123,7 @@ const Suppliers: React.FC = () => {
     if (!window.confirm("Xóa nhà cung cấp này?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/supplier/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/supplier/${id}?userId=${currentUser.UserID}`, {
         method: "DELETE"
       });
 

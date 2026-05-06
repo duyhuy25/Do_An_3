@@ -30,6 +30,7 @@ interface Vehicle {
 
 const Trips: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [cangs, setCangs] = useState<Cang[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
@@ -157,7 +158,8 @@ const Trips: React.FC = () => {
       CangDenID: Number(form.CangDenID),
       PhuongTienID: Number(form.PhuongTienID),
       NhienLieuTieuThu: Number(form.NhienLieuTieuThu || 0),
-      QuangDuong: Number(form.QuangDuong || 0)
+      QuangDuong: Number(form.QuangDuong || 0),
+      UserID: currentUser.UserID
     };
 
     const url = isEdit && selected
@@ -177,7 +179,7 @@ const Trips: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Xóa?")) return;
 
-    await fetch(`http://localhost:5000/api/trip/trip/${id}`, {
+    await fetch(`http://localhost:5000/api/trip/trip/${id}?userId=${currentUser.UserID}`, {
       method: "DELETE"
     });
 

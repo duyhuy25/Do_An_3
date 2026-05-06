@@ -24,6 +24,7 @@ interface KhachHangOption {
 
 const Contracts: React.FC = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [khachHangs, setKhachHangs] = useState<KhachHangOption[]>([]);
 
   const [search, setSearch] = useState("");
@@ -143,6 +144,8 @@ const Contracts: React.FC = () => {
       ...form,
       KhachHangID: Number(form.KhachHangID),
       GiaTri: Number(form.GiaTri || 0),
+      UserID: currentUser.UserID,
+      nguoiCapNhat: currentUser.HoTen || currentUser.Username || "Quản lý"
     };
 
     try {
@@ -170,7 +173,7 @@ const Contracts: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Xóa hợp đồng?")) return;
 
-    await fetch(`http://localhost:5000/api/contract/contract/${id}`, {
+    await fetch(`http://localhost:5000/api/contract/contract/${id}?userId=${currentUser.UserID}`, {
       method: "DELETE"
     });
 

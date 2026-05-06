@@ -30,7 +30,8 @@ export const addMaintenance = async (req: Request, res: Response) => {
 export const updateMaintenance = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await updateMaintenanceService(id, req.body);
+    const data = req.body;
+    await updateMaintenanceService(id, data);
     res.json({ message: "Cập nhật thành công" });
   } catch (error: any) {
     console.error(error);

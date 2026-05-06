@@ -13,6 +13,7 @@ interface Port {
 
 const Ports: React.FC = () => {
   const [ports, setPorts] = useState<Port[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -111,7 +112,7 @@ const Ports: React.FC = () => {
       const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, UserID: currentUser.UserID })
       });
 
       if (res.ok) {
@@ -129,7 +130,7 @@ const Ports: React.FC = () => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/port/port/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/port/port/${id}?userId=${currentUser.UserID}`, {
         method: "DELETE"
       });
 

@@ -41,7 +41,8 @@ export const updateSupplier = async (req: Request, res: Response) => {
 export const deleteSupplier = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await deleteSupplierService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteSupplierService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error) {
     console.error(error);

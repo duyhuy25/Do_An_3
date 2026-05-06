@@ -41,7 +41,8 @@ export const addInvoice = async (req: Request, res: Response) => {
 export const deleteInvoice = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await deleteInvoiceService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteInvoiceService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error) {
     console.error(error);

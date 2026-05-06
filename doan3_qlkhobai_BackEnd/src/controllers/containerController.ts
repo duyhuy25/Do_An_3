@@ -41,7 +41,8 @@ export const updateContainer = async (req: Request, res: Response) => {
 export const deleteContainer = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    await deleteContainerService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteContainerService(id, userId);
     res.json({ message: "Xóa thành công" });
   } catch (error) {
     console.error(error);

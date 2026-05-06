@@ -46,7 +46,8 @@ export const deleteWarehouse = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "ID không hợp lệ" });
     }
 
-    await deleteWarehouseService(id);
+    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    await deleteWarehouseService(id, userId);
     res.json({ message: "Xóa kho thành công" });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server" });

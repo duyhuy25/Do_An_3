@@ -41,6 +41,7 @@ const Costs: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selected, setSelected] = useState<Cost | null>(null);
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
 
   const [form, setForm] = useState({
     HopDongID: "",
@@ -192,6 +193,7 @@ const Costs: React.FC = () => {
       HopDongID: Number(form.HopDongID),
       ContainerID: form.ContainerID ? Number(form.ContainerID) : null,
       SoTien: Number(form.SoTien),
+      UserID: currentUser.UserID
     };
 
     try {
@@ -227,7 +229,7 @@ const Costs: React.FC = () => {
     if (!window.confirm("Bạn chắc chắn muốn xóa?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/cost/cost/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/cost/cost/${id}?userId=${currentUser.UserID}`, {
         method: "DELETE",
       });
 
