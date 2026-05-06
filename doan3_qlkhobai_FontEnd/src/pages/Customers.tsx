@@ -97,8 +97,21 @@ const Customers: React.FC = () => {
       return;
     }
 
+    if (!form.TenKH.trim()) {
+      alert("Vui lòng nhập tên khách hàng");
+      return;
+    }
     if (!form.SDT.trim()) {
       alert("Vui lòng nhập số điện thoại");
+      return;
+    }
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(form.SDT.trim())) {
+      alert("Số điện thoại không hợp lệ (10số)");
+      return;
+    }
+    if (form.Email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.Email)) {
+      alert("Định dạng email không hợp lệ");
       return;
     }
 

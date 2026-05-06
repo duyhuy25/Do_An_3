@@ -92,8 +92,20 @@ const Suppliers: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.TenNCC) {
-      alert("Tên nhà cung cấp là bắt buộc");
+    if (!form.TenNCC.trim()) {
+      alert("Tên nhà cung cấp là bắt buộc!");
+      return;
+    }
+
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (form.SDT && !phoneRegex.test(form.SDT)) {
+      alert("Số điện thoại không hợp lệ!");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (form.Email && !emailRegex.test(form.Email)) {
+      alert("Email không hợp lệ!");
       return;
     }
 

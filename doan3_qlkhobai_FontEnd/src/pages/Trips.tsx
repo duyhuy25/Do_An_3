@@ -148,7 +148,24 @@ const Trips: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!form.MaChuyen || !form.CangDiID || !form.CangDenID) {
-      alert("Thiếu thông tin bắt buộc");
+      alert("Thiếu thông tin bắt buộc (Mã chuyến, Cảng đi, Cảng đến)!");
+      return;
+    }
+
+    if (form.CangDiID === form.CangDenID) {
+      alert("Cảng đi và cảng đến không được trùng nhau!");
+      return;
+    }
+
+    if (form.NgayKhoiHanh && form.NgayDuKienDen) {
+      if (new Date(form.NgayDuKienDen) < new Date(form.NgayKhoiHanh)) {
+        alert("Ngày dự kiến đến không thể trước ngày khởi hành!");
+        return;
+      }
+    }
+
+    if (form.NhienLieuTieuThu && Number(form.NhienLieuTieuThu) < 0) {
+      alert("Nhiên liệu tiêu thụ không thể âm!");
       return;
     }
 

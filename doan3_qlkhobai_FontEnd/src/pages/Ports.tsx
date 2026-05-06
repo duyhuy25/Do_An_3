@@ -99,8 +99,8 @@ const Ports: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.TenCang) {
-      alert("Tên cảng là bắt buộc");
+    if (!form.TenCang.trim() || !form.MaCang.trim()) {
+      alert("Tên cảng và Mã cảng là bắt buộc!");
       return;
     }
 

@@ -195,7 +195,22 @@ const Containers: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!form.LoaiHangID || !form.HopDongID || !form.TrongLuong) {
-      alert("Thiếu dữ liệu bắt buộc!");
+      alert("Thiếu dữ liệu bắt buộc (Loại hàng, Hợp đồng, Trọng lượng)!");
+      return;
+    }
+
+    if (Number(form.TrongLuong) <= 0) {
+      alert("Trọng lượng phải lớn hơn 0!");
+      return;
+    }
+
+    if (form.NhietDoBaoQuan && isNaN(Number(form.NhietDoBaoQuan))) {
+      alert("Nhiệt độ bảo quản phải là số!");
+      return;
+    }
+
+    if (form.DoAm && (Number(form.DoAm) < 0 || Number(form.DoAm) > 100)) {
+      alert("Độ ẩm phải từ 0 đến 100%!");
       return;
     }
 

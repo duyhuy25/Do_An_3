@@ -135,6 +135,17 @@ const Vehicles: React.FC = () => {
       return;
     }
 
+    if (form.TaiTrong && Number(form.TaiTrong) <= 0) {
+      alert("Tải trọng phải là số dương!");
+      return;
+    }
+
+    const currentYear = new Date().getFullYear();
+    if (form.NamSanXuat && (Number(form.NamSanXuat) < 1900 || Number(form.NamSanXuat) > currentYear + 1)) {
+      alert("Năm sản xuất không hợp lệ!");
+      return;
+    }
+
     const payload = {
       ...form,
       TaiTrong: Number(form.TaiTrong || 0),
@@ -182,7 +193,7 @@ const Vehicles: React.FC = () => {
         <h2>🚚 Phương tiện</h2>
 
         <div className="toolbar">
-          <input className="search" placeholder="Tìm..." value={search} onChange={e => setSearch(e.target.value)}/>
+          <input className="search" placeholder="Tìm..." value={search} onChange={e => setSearch(e.target.value)} />
           <button className="btn-add" onClick={handleOpenAdd}>
             + Thêm
           </button>
@@ -223,11 +234,11 @@ const Vehicles: React.FC = () => {
               <td>{v.GPS || "-"}</td>
 
               <td className="actions">
-              <div className="td-actions">
-                <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(v); }}>Sửa</button>
-                <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(v.PhuongTienID); }}>Xóa</button>
-              </div>
-            </td>
+                <div className="td-actions">
+                  <button className="btn-edit" onClick={(e) => { e.stopPropagation(); handleOpenEdit(v); }}>Sửa</button>
+                  <button className="btn-delete" onClick={(e) => { e.stopPropagation(); handleDelete(v.PhuongTienID); }}>Xóa</button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

@@ -155,18 +155,30 @@ const Users: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.Username || !form.HoTen || !form.RoleID) {
-      alert("Thiếu thông tin bắt buộc!");
+    if (!form.Username.trim() || form.Username.trim().length < 3) {
+      alert("Username phải có ít nhất 3 ký tự!");
       return;
     }
 
-    if (!isEdit && !form.PasswordHash) {
-      alert("Phải nhập mật khẩu!");
+    if (!isEdit && (!form.PasswordHash || form.PasswordHash.length < 6)) {
+      alert("Mật khẩu phải có ít nhất 6 ký tự!");
       return;
     }
 
-    if (form.Email && !form.Email.includes("@")) {
+    if (!form.HoTen.trim()) {
+      alert("Họ tên không được để trống!");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (form.Email && !emailRegex.test(form.Email)) {
       alert("Email không hợp lệ!");
+      return;
+    }
+
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (form.SDT && !phoneRegex.test(form.SDT)) {
+      alert("Số điện thoại không hợp lệ!");
       return;
     }
 
