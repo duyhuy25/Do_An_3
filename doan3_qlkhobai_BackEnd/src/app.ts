@@ -19,6 +19,8 @@ import maintenanceRoutes from "./routes/maintenanceRoutes"
 import auditLogRoutes from "./routes/auditLogRoutes"
 import payment from "./routes/paymentRoutes"
 import workflowRoutes from "./routes/workflowRoutes"
+import roleRoutes from "./routes/roleRoutes"
+
 
 const app = express();
 
@@ -45,5 +47,7 @@ app.use("/api", maintenanceRoutes);
 app.use("/api", auditLogRoutes);
 app.use("/api/payment", payment);
 app.use("/api/workflow", workflowRoutes);
+app.use("/api/role", roleRoutes);
+
 
 export default app;

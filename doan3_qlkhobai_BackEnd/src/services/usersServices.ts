@@ -4,6 +4,7 @@ import {
   updateUserById,
   deleteUserById,
   searchUserByKeyword,
+  findUserByUsername,
 } from "../repositories/usersRepositories";
 import { createAuditLog } from "../repositories/auditLogRepositories";
 
@@ -55,4 +56,22 @@ export const deleteUserService = async (id: number, userId?: number) => {
 
 export const searchUsersService = async (keyword: string) => {
   return await searchUserByKeyword(keyword);
+};
+
+export const loginService = async (username: string, password: string) => {
+  const user = await findUserByUsername(username);
+  if (!user) {
+    throw new Error("Tài khoản không tồn tại");
+  }
+
+  // So sánh mật khẩu (hiện tại đang để text thuần nên so sánh trực tiếp)
+  if (user.PasswordHash?.trim() !== password.trim()) {
+    throw new Error("Mật khẩu không chính xác");
+  }
+
+  if (user.TrangThai === "Khóa") {
+    throw new Error("Tài khoản đã bị khóa");
+  }
+
+  return user;
 };

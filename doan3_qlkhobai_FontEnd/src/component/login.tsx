@@ -22,22 +22,23 @@ export default function AuthPage({ onLogin }: LoginProps) {
 
     setLoading(true);
     try {
-
-      const res = await fetch("http://localhost:5000/api/user/user");
-      if (!res.ok) throw new Error("Không thể kết nối đến máy chủ");
+      const res = await fetch("http://localhost:5000/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password: password.trim() })
+      });
       
-      const users = await res.json();
-      const user = users.find((u: any) => u.Username === username && u.PasswordHash === password);
+      const data = await res.json();
 
-      if (!user) {
-        alert("Sai tài khoản hoặc mật khẩu!");
-      } else {
-
-        alert(`Xin chào ${user.HoTen || user.Username}`);
-        onLogin(user);
+      if (!res.ok) {
+        throw new Error(data.message || "Sai tài khoản hoặc mật khẩu!");
       }
+
+      alert(`Xin chào ${data.HoTen || data.Username}`);
+      onLogin(data);
     } catch (err: any) {
-      alert("Lỗi: " + err.message);
+      console.error("Lỗi đăng nhập:", err);
+      alert(err.message);
     } finally {
       setLoading(false);
     }

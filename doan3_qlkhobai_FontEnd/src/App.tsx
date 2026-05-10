@@ -34,8 +34,11 @@ function App() {
     try {
       const savedUser = localStorage.getItem("currentUser");
       if (savedUser && savedUser !== "undefined") {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
         setIsLoggedIn(true);
+        // Set default module based on role
+        setModule(parsedUser.RoleID === 1 ? "dashboard" : "containers");
       }
     } catch (e) {
       console.error("Lỗi parse user:", e);
@@ -47,6 +50,7 @@ function App() {
     setUser(userData);
     setIsLoggedIn(true);
     localStorage.setItem("currentUser", JSON.stringify(userData));
+    setModule(userData.RoleID === 1 ? "dashboard" : "containers");
   };
 
   const handleLogout = () => {
@@ -55,6 +59,7 @@ function App() {
     localStorage.removeItem("currentUser");
   };
 
+  const isAdmin = user?.RoleID === 1;
   const renderModule = () => {
     switch (module) {
       case "containers": return <Containers />;
@@ -68,14 +73,14 @@ function App() {
       case "contracts": return <Contracts />
       case "costs": return <Costs />
       case "invoices": return <Invoices />
-      case "users": return <Users />
-      case "dashboard": return <Dashboard />
+      case "users": return isAdmin ? <Users /> : <Dashboard />;
+      case "dashboard": return isAdmin ? <Dashboard /> : <Containers />;
       case "assignmentcontainers": return <AssignmentContainers />
-      case "auditlogs": return <AuditLogs />
+      case "auditlogs": return isAdmin ? <AuditLogs /> : <Containers />;
       case "gpscontainers": return <GPSContainers />
       case "maintenance": return <Maintenance />
       case "suppliers": return <Suppliers />
-      default: return <Dashboard />;
+      default: return isAdmin ? <Dashboard /> : <Containers />;
     }
   };
 
@@ -87,7 +92,7 @@ function App() {
     <div className="app">
       <Header user={user} onLogout={handleLogout} />
       <div className="container">
-        <Sidebar onSelect={setModule} />
+        <Sidebar user={user} onSelect={setModule} />
         <div className="main-content">
           {renderModule()}
         </div>

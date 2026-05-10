@@ -3,10 +3,13 @@ import "./sidebar.css";
 
 interface Props {
   onSelect: (module: string) => void;
+  user: any;
 }
 
-const Sidebar = ({ onSelect }: Props) => {
+const Sidebar = ({ onSelect, user }: Props) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  const isAdmin = user?.RoleID === 1;
 
   const toggleMenu = (menu: string) => {
     setOpenMenu((prev) => (prev === menu ? null : menu));
@@ -78,22 +81,29 @@ const Sidebar = ({ onSelect }: Props) => {
             </ul>
           )}
         </li>
-        <li>
-          <div className="menu-toggle" onClick={() => toggleMenu("users")}>
-            👤 Người dùng
-          </div>
 
-          {openMenu === "users" && (
-            <ul className="sub-menu">
-              <li onClick={() => onSelect("users")}>Quản lý tài khoản</li>
-            </ul>
-          )}
-        </li>
-        <li>
-          <div className="menu-toggle" onClick={() => onSelect("dashboard")}>
-            📊 Báo cáo thống kê
-          </div>
-        </li>
+        {/* Module Người dùng và Thống kê chỉ dành cho Admin */}
+        {isAdmin && (
+          <>
+            <li>
+              <div className="menu-toggle" onClick={() => toggleMenu("users")}>
+                👤 Người dùng
+              </div>
+
+              {openMenu === "users" && (
+                <ul className="sub-menu">
+                  <li onClick={() => onSelect("users")}>Quản lý tài khoản</li>
+                </ul>
+              )}
+            </li>
+            <li>
+              <div className="menu-toggle" onClick={() => onSelect("dashboard")}>
+                📊 Báo cáo thống kê
+              </div>
+            </li>
+          </>
+        )}
+
         <li>
           <div className="menu-toggle" onClick={() => toggleMenu("advanced")}>
             ⚙️ Mở rộng hệ thống
@@ -104,9 +114,11 @@ const Sidebar = ({ onSelect }: Props) => {
               <li onClick={() => onSelect("assignmentcontainers")}>
                 Phân công Container
               </li>
-              <li onClick={() => onSelect("auditlogs")}>
-                Nhật ký hệ thống
-              </li>
+              {isAdmin && (
+                <li onClick={() => onSelect("auditlogs")}>
+                  Nhật ký hệ thống
+                </li>
+              )}
               <li onClick={() => onSelect("gpscontainers")}>
                 Theo dõi GPS
               </li>
